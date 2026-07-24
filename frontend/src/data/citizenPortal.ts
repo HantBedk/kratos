@@ -1,51 +1,124 @@
 import type { BadgeTone } from '@/components/ui/StatusBadge'
 import { formatCOP } from '@/lib/money'
-import {
-  FileCheck2,
-  FileSearch,
-  Landmark,
-  MessageSquareWarning,
-  type LucideIcon,
-} from 'lucide-react'
 
 export type CitizenService = {
   slug: string
+  /** Título corto en menú */
   title: string
+  /** Verbo claro para la persona del común */
+  action: string
   description: string
+  hint: string
   to: string
-  icon: LucideIcon
+  /** Bootstrap Icons, e.g. `bi bi-bank` */
+  iconClass: string
 }
 
 export const citizenServices: CitizenService[] = [
   {
     slug: 'impuestos',
     title: 'Impuestos',
-    description: 'Consulta qué debes, por concepto y monto; paga con PSE (demo).',
+    action: 'Pagar',
+    description: 'Deudas y pagos',
+    hint: 'Predial e ICA',
     to: '/ciudadano/impuestos',
-    icon: Landmark,
+    iconClass: 'bi bi-bank',
+  },
+  {
+    slug: 'registros',
+    title: 'Registros',
+    action: 'Inscribirme',
+    description: 'Registros municipales',
+    hint: 'Elige tu alcaldía',
+    to: '/ciudadano/registros',
+    iconClass: 'bi bi-clipboard-data',
   },
   {
     slug: 'pqrsd',
-    title: 'PQRSD',
-    description: 'Radica peticiones, quejas, reclamos, sugerencias o denuncias y sigue el estado.',
+    title: 'Peticiones',
+    action: 'Radicar',
+    description: 'PQRSD',
+    hint: 'Seguimiento',
     to: '/ciudadano/pqrsd',
-    icon: MessageSquareWarning,
+    iconClass: 'bi bi-chat-left-text',
   },
   {
     slug: 'certificados',
     title: 'Certificados',
-    description: 'Solicita residencia o estratificación y descarga el documento aprobado.',
+    action: 'Solicitar',
+    description: 'Documentos',
+    hint: 'Descarga',
     to: '/ciudadano/certificados',
-    icon: FileCheck2,
+    iconClass: 'bi bi-file-earmark-check',
   },
   {
     slug: 'expediente',
-    title: 'Expediente',
-    description: 'Consulta el historial unificado de tus trámites, documentos y estados.',
+    title: 'Historial',
+    action: 'Ver',
+    description: 'Todo junto',
+    hint: 'Línea de tiempo',
     to: '/ciudadano/expediente',
-    icon: FileSearch,
+    iconClass: 'bi bi-clock-history',
   },
 ]
+
+export type CitizenPayment = {
+  id: string
+  concepto: string
+  referencia: string
+  fecha: string
+  valor: number
+  canal: string
+}
+
+/** Pagos ya realizados (demo del ciudadano). */
+export const mockCitizenPayments: CitizenPayment[] = [
+  {
+    id: '1',
+    concepto: 'Predial',
+    referencia: '01-02-008-00112',
+    fecha: '12/03/2026',
+    valor: 620_000,
+    canal: 'PSE',
+  },
+  {
+    id: '2',
+    concepto: 'ICA',
+    referencia: 'ICA-2025-Q4',
+    fecha: '28/01/2026',
+    valor: 980_000,
+    canal: 'Banco',
+  },
+  {
+    id: '3',
+    concepto: 'Predial',
+    referencia: '01-02-003-00045',
+    fecha: '15/11/2025',
+    valor: 410_000,
+    canal: 'Caja',
+  },
+]
+
+export function citizenDebtTotal(items: TaxObligation[] = mockTaxObligations): number {
+  return items.reduce((acc, row) => acc + row.saldo, 0)
+}
+
+export function citizenPaidTotal(items: CitizenPayment[] = mockCitizenPayments): number {
+  return items.reduce((acc, row) => acc + row.valor, 0)
+}
+
+/** Resumen por concepto: qué debe y por qué. */
+export function citizenDebtByConcept(items: TaxObligation[] = mockTaxObligations) {
+  const map = new Map<string, { concepto: string; saldo: number; items: number }>()
+  for (const row of items) {
+    if (row.saldo <= 0) continue
+    const prev = map.get(row.concepto) ?? { concepto: row.concepto, saldo: 0, items: 0 }
+    prev.saldo += row.saldo
+    prev.items += 1
+    map.set(row.concepto, prev)
+  }
+  return [...map.values()]
+}
 
 export type TaxObligation = {
   id: string
@@ -165,6 +238,30 @@ export type ExpedienteEvent = {
   estadoTone: BadgeTone
 }
 
+/** Perfil del ciudadano (demo). La cédula es un identificador inmutable. */
+export type CitizenProfile = {
+  nombre: string
+  /** Documento de identidad. No editable. */
+  cedula: string
+  email: string
+  telefono: string
+  direccion: string
+  municipio: string
+  iniciales: string
+  miembroDesde: string
+}
+
+export const citizenProfile: CitizenProfile = {
+  nombre: 'María Alejandra Restrepo',
+  cedula: 'CC 52.448.901',
+  email: 'maria.restrepo@correo.com',
+  telefono: '+57 310 555 4820',
+  direccion: 'Calle 8 # 12-40, Barrio Centro',
+  municipio: 'San Verde, Putumayo',
+  iniciales: 'MR',
+  miembroDesde: 'Marzo 2024',
+}
+
 export const mockExpediente: {
   documento: string
   ciudadano: string
@@ -178,7 +275,7 @@ export const mockExpediente: {
       fecha: '18/07/2026 09:14',
       titulo: 'Certificado de estratificación radicado',
       detalle: 'CER-EST-2026-044 · Anexos: recibo servicios',
-      origen: 'Portal · Certificados',
+      origen: 'Certificados',
       estado: 'En revisión',
       estadoTone: 'info',
     },
@@ -187,34 +284,34 @@ export const mockExpediente: {
       fecha: '15/07/2026 16:02',
       titulo: 'Certificado de residencia aprobado',
       detalle: 'CER-RES-2026-091 · Documento listo para descarga',
-      origen: 'Portal · Certificados',
+      origen: 'Certificados',
       estado: 'Aprobado',
       estadoTone: 'success',
     },
     {
       id: '3',
       fecha: '10/07/2026 11:30',
-      titulo: 'PQRSD en trámite',
-      detalle: 'PQR-2026-00421 · Asignada a Secretaría de Infraestructura',
-      origen: 'Portal · PQRSD',
+      titulo: 'Petición en trámite',
+      detalle: 'PQR-2026-00421 · Secretaría de Infraestructura',
+      origen: 'Peticiones',
       estado: 'En trámite',
       estadoTone: 'info',
     },
     {
       id: '4',
       fecha: '05/07/2026 08:45',
-      titulo: 'Obligación predial consultada',
+      titulo: 'Consulta de predial',
       detalle: `Ficha 01-02-003-00045 · Saldo ${formatCOP(842_500)}`,
-      origen: 'Portal · Impuestos',
+      origen: 'Impuestos',
       estado: 'En mora',
       estadoTone: 'warning',
     },
     {
       id: '5',
       fecha: '28/06/2026 14:20',
-      titulo: 'PQRSD respondida',
-      detalle: 'PQR-2026-00388 · Respuesta notificada al ciudadano',
-      origen: 'Consola · PQRSD',
+      titulo: 'Reclamo respondido',
+      detalle: 'PQR-2026-00388 · Ya puedes ver la respuesta',
+      origen: 'Peticiones',
       estado: 'Respondida',
       estadoTone: 'success',
     },

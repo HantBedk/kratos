@@ -4,6 +4,6 @@ export const currentEntity = {
   shortName: 'San Verde',
   nit: '800.123.456-7',
   category: '6',
-  department: 'Meta (demo)',
+  department: 'Meta',
   vigencia: '2026',
 } as const

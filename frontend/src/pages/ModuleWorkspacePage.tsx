@@ -1,20 +1,60 @@
-import { CheckCircle2, Eye, Plus, Search, Workflow } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { useSession } from '@/auth/SessionContext'
 import { SectionHeader } from '@/components/KpiCard'
 import { DataTable, type Column } from '@/components/ui/DataTable'
 import { Field, inputClass, textareaClass } from '@/components/ui/Field'
 import { Modal } from '@/components/ui/Modal'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import { roleCanAccessSlug } from '@/data/demoRoles'
 import { findModule, findModuleGroup } from '@/data/modules'
 import { getWorkspace, type ModuleRecord } from '@/data/moduleWorkspaces'
 import { formatCOP } from '@/lib/money'
+import { ModuleDashboardPage } from '@/pages/ModuleDashboardPage'
+import { PqrsdManagePage } from '@/pages/PqrsdManagePage'
 
 export function ModuleWorkspacePage() {
   const { slug = '' } = useParams()
+  const { role } = useSession()
+  const mod = findModule(slug) ?? (slug === 'pqrsd' ? findModule('pqrsd-bandeja') : undefined)
+  const accessSlug = slug === 'pqrsd' ? 'pqrsd-bandeja' : slug
+  const allowed = role ? roleCanAccessSlug(role, accessSlug) : false
+
+  if (slug === 'pqrsd' || slug.startsWith('pqrsd-')) {
+    if (mod?.kind === 'dashboard') {
+      if (!allowed) return <AccessDenied />
+      return <ModuleDashboardPage slug={slug} />
+    }
+    return <PqrsdManagePage />
+  }
+
+  if (mod?.kind === 'dashboard') {
+    if (!allowed) return <AccessDenied />
+    return <ModuleDashboardPage slug={slug} />
+  }
+
+  return <ModuleListWorkspace slug={slug} />
+}
+
+function AccessDenied() {
+  return (
+    <div className="card">
+      <div className="card-body text-center py-5">
+        <h1 className="h4">Sin acceso a este módulo</h1>
+        <Link to="/app/dashboard" className="btn btn-primary mt-3">
+          Volver al dashboard
+        </Link>
+      </div>
+    </div>
+  )
+}
+
+function ModuleListWorkspace({ slug }: { slug: string }) {
+  const { role } = useSession()
   const mod = findModule(slug)
   const group = findModuleGroup(slug)
   const workspace = getWorkspace(slug)
+  const allowed = role ? roleCanAccessSlug(role, slug) : false
 
   const [records, setRecords] = useState<ModuleRecord[]>(() => workspace?.records ?? [])
   const [query, setQuery] = useState('')
@@ -36,14 +76,29 @@ export function ModuleWorkspacePage() {
 
   if (!mod || !workspace) {
     return (
-      <div className="glass-panel rounded-[var(--radius-lg)] p-8 text-center">
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-[var(--text)]">
-          Módulo no encontrado
-        </h1>
-        <p className="mt-2 text-[var(--text-muted)]">Revisa el menú lateral o vuelve al dashboard.</p>
-        <Link to="/app/dashboard" className="mt-6 inline-flex text-sm font-semibold text-[var(--accent)]">
-          Volver al dashboard
-        </Link>
+      <div className="card">
+        <div className="card-body text-center py-5">
+          <h1 className="h4">Módulo no encontrado</h1>
+          <Link to="/app/dashboard" className="btn btn-primary mt-3">
+            Volver al dashboard
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (!allowed) {
+    return (
+      <div className="card">
+        <div className="card-body text-center py-5">
+          <h1 className="h4">Sin acceso a este módulo</h1>
+          <p className="text-body-secondary">
+            El perfil <strong>{role?.label}</strong> no incluye {mod.label}.
+          </p>
+          <Link to="/app/dashboard" className="btn btn-primary mt-2">
+            Volver al dashboard
+          </Link>
+        </div>
       </div>
     )
   }
@@ -69,15 +124,15 @@ export function ModuleWorkspacePage() {
     {
       key: 'code',
       header: 'Código',
-      render: (row) => <span className="font-semibold text-[var(--accent)]">{row.code}</span>,
+      render: (row) => <span className="fw-semibold text-primary">{row.code}</span>,
     },
     {
       key: 'title',
       header: workspace.singular,
       render: (row) => (
         <div>
-          <p className="font-semibold text-[var(--text)]">{row.title}</p>
-          <p className="text-xs text-[var(--text-muted)]">{row.party}</p>
+          <div className="fw-semibold">{row.title}</div>
+          <div className="small text-body-secondary">{row.party}</div>
         </div>
       ),
     },
@@ -86,15 +141,15 @@ export function ModuleWorkspacePage() {
       header: 'Valor',
       render: (row) =>
         row.amount != null ? (
-          <span className="tabular-nums">{formatCOP(row.amount)}</span>
+          <span className="font-monospace">{formatCOP(row.amount)}</span>
         ) : (
-          <span className="text-[var(--text-subtle)]">—</span>
+          <span className="text-body-secondary">—</span>
         ),
     },
     {
       key: 'date',
       header: 'Fecha',
-      render: (row) => <span className="text-[var(--text-muted)]">{row.date}</span>,
+      render: (row) => <span className="text-body-secondary">{row.date}</span>,
     },
     {
       key: 'status',
@@ -104,8 +159,7 @@ export function ModuleWorkspacePage() {
     {
       key: 'actions',
       header: '',
-      className: 'w-12',
-      render: () => <Eye className="h-4 w-4 text-[var(--text-subtle)]" />,
+      render: () => <i className="bi bi-eye text-body-secondary" />,
     },
   ]
 
@@ -160,11 +214,13 @@ export function ModuleWorkspacePage() {
   }
 
   return (
-    <div className="relative">
+    <div>
       {toast && (
-        <div className="animate-enter fixed right-4 bottom-4 z-50 flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface-solid)] px-4 py-3 text-sm font-semibold text-[var(--text)] shadow-[var(--shadow-md)]">
-          <CheckCircle2 className="h-4 w-4 text-[var(--success)]" />
-          {toast}
+        <div className="toast show position-fixed bottom-0 end-0 m-3 align-items-center" style={{ zIndex: 1080 }}>
+          <div className="toast-body">
+            <i className="bi bi-check-circle text-success me-2" />
+            {toast}
+          </div>
         </div>
       )}
 
@@ -173,82 +229,86 @@ export function ModuleWorkspacePage() {
         title={mod.label}
         description={mod.description}
         action={
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-[var(--border)] bg-[var(--bg-elevated)] px-3 py-1.5 text-xs font-bold tracking-wide text-[var(--text)] uppercase">
-              {mod.phase}
-            </span>
-            <button
-              type="button"
-              onClick={() => setCreateOpen(true)}
-              className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]"
-            >
-              <Plus className="h-4 w-4" />
+          <div className="d-flex flex-wrap gap-2">
+            <span className="badge text-bg-secondary align-self-center">{mod.phase}</span>
+            <button type="button" className="btn btn-primary" onClick={() => setCreateOpen(true)}>
+              <i className="bi bi-plus-lg me-1" />
               {workspace.createLabel}
             </button>
           </div>
         }
       />
 
-      <div className="mb-5 grid gap-3 sm:grid-cols-3">
+      <div className="row mb-3">
         {workspace.stats.map((stat) => (
-          <div key={stat.label} className="glass-panel rounded-[var(--radius-lg)] px-4 py-3">
-            <p className="text-xs font-semibold tracking-[0.12em] text-[var(--text-subtle)] uppercase">{stat.label}</p>
-            <p className="mt-1 font-[family-name:var(--font-display)] text-xl font-semibold text-[var(--text)]">
-              {stat.value}
-            </p>
+          <div key={stat.label} className="col-md-4 mb-2">
+            <div className="info-box">
+              <span className="info-box-icon text-bg-primary">
+                <i className="bi bi-graph-up" />
+              </span>
+              <div className="info-box-content">
+                <span className="info-box-text">{stat.label}</span>
+                <span className="info-box-number">{stat.value}</span>
+              </div>
+            </div>
           </div>
         ))}
       </div>
 
-      <div className="mb-5 glass-panel rounded-[var(--radius-lg)] p-4">
-        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--text)]">
-          <Workflow className="h-4 w-4 text-[var(--accent)]" />
-          Flujo del módulo
+      <div className="card mb-3">
+        <div className="card-header">
+          <h3 className="card-title mb-0">
+            <i className="bi bi-diagram-3 me-2" />
+            Flujo del módulo
+          </h3>
         </div>
-        <ol className="flex flex-wrap gap-2">
-          {workspace.workflow.map((step, index) => (
-            <li
-              key={step}
-              className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg-elevated)] px-3 py-1.5 text-xs font-semibold text-[var(--text-muted)]"
-            >
-              <span className="grid h-5 w-5 place-items-center rounded-full bg-[var(--accent-soft)] text-[10px] text-[var(--accent)]">
-                {index + 1}
-              </span>
-              {step}
-            </li>
-          ))}
-        </ol>
-      </div>
-
-      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
-        <label className="relative min-w-0 flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[var(--text-subtle)]" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={workspace.searchPlaceholder}
-            className={`${inputClass} pl-10`}
-          />
-        </label>
-        <div className="flex flex-wrap gap-2">
-          {workspace.filters.map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => setFilter(item)}
-              className={`rounded-full px-3 py-2 text-xs font-bold transition-colors ${
-                filter === item
-                  ? 'bg-[var(--accent)] text-white'
-                  : 'border border-[var(--border)] bg-[var(--bg-elevated)] text-[var(--text-muted)] hover:border-[var(--border-strong)]'
-              }`}
-            >
-              {item}
-            </button>
-          ))}
+        <div className="card-body">
+          <ol className="breadcrumb mb-0 flex-wrap">
+            {workspace.workflow.map((step, index) => (
+              <li key={step} className="breadcrumb-item">
+                <span className="badge text-bg-light border me-1">{index + 1}</span>
+                {step}
+              </li>
+            ))}
+          </ol>
         </div>
       </div>
 
-      <p className="mb-3 text-sm text-[var(--text-muted)]">
+      <div className="card mb-3">
+        <div className="card-body">
+          <div className="row g-2 align-items-center">
+            <div className="col-lg-5">
+              <div className="input-group">
+                <span className="input-group-text">
+                  <i className="bi bi-search" />
+                </span>
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={workspace.searchPlaceholder}
+                  className="form-control"
+                />
+              </div>
+            </div>
+            <div className="col-lg-7">
+              <div className="btn-group flex-wrap" role="group">
+                {workspace.filters.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    className={`btn btn-sm ${filter === item ? 'btn-primary' : 'btn-outline-secondary'}`}
+                    onClick={() => setFilter(item)}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p className="text-body-secondary small mb-2">
         {filtered.length} de {records.length} {workspace.plural.toLowerCase()} · clic en una fila para ver detalle
       </p>
 
@@ -268,36 +328,26 @@ export function ModuleWorkspacePage() {
         wide
         footer={
           selected && (
-            <div className="flex flex-wrap justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setSelected(null)}
-                className="rounded-full border border-[var(--border)] px-4 py-2 text-sm font-semibold text-[var(--text)]"
-              >
+            <>
+              <button type="button" className="btn btn-outline-secondary" onClick={() => setSelected(null)}>
                 Cerrar
               </button>
-              <button
-                type="button"
-                onClick={advanceStatus}
-                className="rounded-full bg-[var(--cta)] px-4 py-2 text-sm font-bold text-[var(--cta-text)] hover:bg-[var(--cta-hover)]"
-              >
+              <button type="button" className="btn btn-primary" onClick={advanceStatus}>
                 Avanzar estado
               </button>
-            </div>
+            </>
           )
         }
       >
         {selected && (
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-2">
+          <>
+            <div className="mb-3">
               <StatusBadge tone={selected.statusTone}>{selected.status}</StatusBadge>
               {selected.amount != null && (
-                <span className="rounded-full bg-[var(--bg-muted)] px-3 py-1 text-sm font-semibold text-[var(--text)]">
-                  {formatCOP(selected.amount)}
-                </span>
+                <span className="badge text-bg-light border ms-2">{formatCOP(selected.amount)}</span>
               )}
             </div>
-            <dl className="grid gap-3 sm:grid-cols-2">
+            <div className="row g-3">
               {(selected.fields.length
                 ? selected.fields
                 : [
@@ -306,47 +356,38 @@ export function ModuleWorkspacePage() {
                     { label: 'Fecha', value: selected.date },
                   ]
               ).map((field) => (
-                <div key={field.label} className="rounded-xl border border-[var(--border)] bg-[var(--bg-muted)] p-3">
-                  <dt className="text-xs font-semibold tracking-[0.1em] text-[var(--text-subtle)] uppercase">
-                    {field.label}
-                  </dt>
-                  <dd className="mt-1 text-sm font-semibold text-[var(--text)]">{field.value}</dd>
+                <div key={field.label} className="col-sm-6">
+                  <div className="border rounded p-3 h-100">
+                    <div className="small text-body-secondary text-uppercase">{field.label}</div>
+                    <div className="fw-semibold">{field.value}</div>
+                  </div>
                 </div>
               ))}
-            </dl>
-            <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
-              <p className="text-xs font-semibold tracking-[0.1em] text-[var(--text-subtle)] uppercase">Notas / bitácora</p>
-              <p className="mt-2 text-sm leading-relaxed text-[var(--text-muted)]">{selected.notes}</p>
             </div>
-          </div>
+            <div className="alert alert-secondary mt-3 mb-0">
+              <strong>Notas / bitácora:</strong> {selected.notes}
+            </div>
+          </>
         )}
       </Modal>
 
       <Modal
         open={createOpen}
         title={workspace.createLabel}
-        description={`Demostración interactiva de ${workspace.plural.toLowerCase()}. Los datos se guardan solo en esta sesión.`}
+        description={`Demostración interactiva. Los datos se guardan solo en esta sesión.`}
         onClose={() => setCreateOpen(false)}
         footer={
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setCreateOpen(false)}
-              className="rounded-full border border-[var(--border)] px-4 py-2 text-sm font-semibold"
-            >
+          <>
+            <button type="button" className="btn btn-outline-secondary" onClick={() => setCreateOpen(false)}>
               Cancelar
             </button>
-            <button
-              type="submit"
-              form="create-module-form"
-              className="rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]"
-            >
+            <button type="submit" form="create-module-form" className="btn btn-primary">
               Guardar
             </button>
-          </div>
+          </>
         }
       >
-        <form id="create-module-form" className="space-y-4" onSubmit={onCreate}>
+        <form id="create-module-form" onSubmit={onCreate}>
           <Field label={workspace.formHints.title}>
             <input
               className={inputClass}

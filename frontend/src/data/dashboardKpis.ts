@@ -297,7 +297,7 @@ export const dashboardKpiPanels: Record<KpiPanel['id'], KpiPanel> = {
     id: 'pqrsd',
     title: 'PQRSD por vencer',
     description: 'Peticiones, quejas y reclamos con término legal menor a 3 días.',
-    moduleLink: '/app/modulos/pqrsd',
+    moduleLink: '/app/modulos/pqrsd-vencimientos',
     items: Array.from({ length: 14 }, (_, i) => {
       const n = 1842 - i
       const days = (i % 3) + 1

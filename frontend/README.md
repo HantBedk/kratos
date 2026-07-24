@@ -2,7 +2,7 @@
 
 ERP Municipal SelvaTic · Proyecto Kratos
 
-SPA de demostración (consola institucional + portal ciudadano) con tema claro/oscuro.
+**UI:** solo AdminLTE 4 + Bootstrap 5 + Bootstrap Icons (consola, login y portal ciudadano).
 
 ## Puerto fijo (obligatorio)
 
@@ -11,11 +11,11 @@ SPA de demostración (consola institucional + portal ciudadano) con tema claro/o
 ## Stack
 
 - React 19 + TypeScript + Vite
-- Tailwind CSS 4
+- AdminLTE 4.1 + Bootstrap 5 + Bootstrap Icons
 - React Router
-- Lucide Icons
+- Sin Tailwind / sin CSS propio de marca
 
-## Arranque local (Vite)
+## Arranque local
 
 ```bash
 cd frontend
@@ -23,42 +23,29 @@ npm install
 npm run dev
 ```
 
-Abre **http://localhost:5173**.
+Abre **http://localhost:5173**. CSS de UI en `src/adminlte/bootstrap.ts`.
 
 ## Docker
-
-Desde la raíz del repo:
 
 ```bash
 docker compose up --build -d
 ```
 
-- URL: **http://localhost:5173**
-- Contenedor: `kratos-frontend`
-
-Detener:
-
-```bash
-docker compose down
-```
-
-> No uses Vite y Docker a la vez en el mismo puerto: uno u otro. Si 5173 está ocupado, libera el proceso; no cambies el puerto.
+URL: **http://localhost:5173**
 
 ## Rutas
 
 | Ruta | Descripción |
 |------|-------------|
-| `/login` | Acceso a consola (demo: cualquier credencial) |
-| `/app/dashboard` | Dashboard gerencial mock |
-| `/app/modulos/:slug` | Workspace interactivo por módulo |
-| `/ciudadano` | Portal ciudadano (consulta predial mock) |
+| `/login` | Login AdminLTE |
+| `/app/*` | Consola AdminLTE |
+| `/ciudadano/*` | Portal ciudadano AdminLTE |
 
-## Tema día / noche
+## Tema
 
-El toggle persiste en `localStorage` (`kratos-theme`). En la primera visita respeta `prefers-color-scheme`.
+`localStorage` (`kratos-theme`) + `data-bs-theme`.
 
 ## Notas
 
-- Sin backend todavía: datos mock.
-- Design system propio; tipografías Fraunces + Manrope.
-- Marca de producto: **Kratos** · Empresa: **SelvaTic**.
+- Datos mock; sin backend.
+- Marca: **Kratos** · **SelvaTic**.

@@ -1,5 +1,6 @@
 import { formatCOP } from '@/lib/money'
 import { moduleGroups } from '@/data/modules'
+import { notificationsForRole } from '@/data/pqrsd'
 
 export type SearchHit = {
   id: string
@@ -53,15 +54,15 @@ export function buildSearchIndex(): SearchHit[] {
       id: 'pqr-1842',
       kind: 'PQRSD',
       title: 'PQRSD-1842 · Hueco vía principal',
-      subtitle: 'Por vencer · Infraestructura',
-      to: '/app/modulos/pqrsd',
+      subtitle: 'Por vencer · Planeación',
+      to: '/app/modulos/pqrsd-vencimientos',
     },
     {
       id: 'pqr-1830',
       kind: 'PQRSD',
       title: 'PQRSD-1830 · Copia de contrato',
-      subtitle: 'En término · Contratación',
-      to: '/app/modulos/pqrsd',
+      subtitle: 'En trámite · Contratación',
+      to: '/app/modulos/pqrsd-bandeja',
     },
     {
       id: 'fun-laura',
@@ -105,50 +106,7 @@ export type AppNotification = {
   to?: string
 }
 
-export const initialNotifications: AppNotification[] = [
-  {
-    id: 'n1',
-    title: 'Póliza por vencer',
-    body: 'CTO-2026-045 · cumplimiento vence el 05/08/2026',
-    time: 'hace 12 min',
-    read: false,
-    tone: 'warning',
-    to: '/app/modulos/polizas',
-  },
-  {
-    id: 'n2',
-    title: 'PQRSD crítica',
-    body: 'PQRSD-1842 vence en menos de 24 horas',
-    time: 'hace 35 min',
-    read: false,
-    tone: 'danger',
-    to: '/app/modulos/pqrsd',
-  },
-  {
-    id: 'n3',
-    title: 'Recaudo PSE',
-    body: `Lote bancario conciliado por ${formatCOP(48_200_000)}`,
-    time: 'hace 1 h',
-    read: false,
-    tone: 'success',
-    to: '/app/modulos/pse',
-  },
-  {
-    id: 'n4',
-    title: 'CDP pendiente de firma',
-    body: 'CDP-2026-0158 · Secretaría de Cultura',
-    time: 'hace 2 h',
-    read: true,
-    tone: 'info',
-    to: '/app/modulos/presupuesto',
-  },
-  {
-    id: 'n5',
-    title: 'Nueva radicación',
-    body: 'RAD-2026-45802 · Oficio Contraloría sin asignar',
-    time: 'hace 3 h',
-    read: true,
-    tone: 'info',
-    to: '/app/modulos/ventanilla',
-  },
-]
+/** Prefer notificationsForRole(roleId) — filtrado por perfil. */
+export const initialNotifications: AppNotification[] = notificationsForRole('admin')
+
+export { notificationsForRole }

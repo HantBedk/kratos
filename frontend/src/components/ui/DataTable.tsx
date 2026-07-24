@@ -21,47 +21,46 @@ export function DataTable<T extends { id: string }>({
   emptyMessage?: string
 }) {
   if (rows.length === 0) {
-    return (
-      <div className="rounded-[var(--radius-lg)] border border-dashed border-[var(--border-strong)] bg-[var(--bg-elevated)] px-6 py-12 text-center text-sm text-[var(--text-muted)]">
-        {emptyMessage}
-      </div>
-    )
+    return <div className="alert alert-light border mb-0">{emptyMessage}</div>
   }
 
   return (
-    <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface-solid)]">
-      <div className="overflow-x-auto">
-        <table className="min-w-full text-left text-sm">
-          <thead className="border-b border-[var(--border)] bg-[var(--bg-muted)]">
-            <tr>
-              {columns.map((col) => (
-                <th
-                  key={col.key}
-                  className={`px-4 py-3 text-xs font-bold tracking-[0.08em] text-[var(--text-subtle)] uppercase ${col.className ?? ''}`}
-                >
-                  {col.header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr
-                key={row.id}
-                onClick={() => onRowClick?.(row)}
-                className={`border-b border-[var(--border)] last:border-0 transition-colors ${
-                  onRowClick ? 'cursor-pointer hover:bg-[var(--bg-muted)]' : ''
-                } ${selectedId === row.id ? 'bg-[var(--accent-soft)]' : ''}`}
-              >
+    <div className="card mb-0">
+      <div className="card-body p-0">
+        <div className="table-responsive">
+          <table className="table table-hover table-striped mb-0 align-middle">
+            <thead>
+              <tr>
                 {columns.map((col) => (
-                  <td key={col.key} className={`px-4 py-3 text-[var(--text)] ${col.className ?? ''}`}>
-                    {col.render(row)}
-                  </td>
+                  <th key={col.key} className={col.className} scope="col">
+                    {col.header}
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr
+                  key={row.id}
+                  onClick={() => onRowClick?.(row)}
+                  className={[
+                    onRowClick ? 'cursor-pointer' : '',
+                    selectedId === row.id ? 'table-primary' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  style={onRowClick ? { cursor: 'pointer' } : undefined}
+                >
+                  {columns.map((col) => (
+                    <td key={col.key} className={col.className}>
+                      {col.render(row)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )

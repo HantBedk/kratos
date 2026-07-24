@@ -1,8 +1,13 @@
-import { CreditCard, Search } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
+import { CitizenPageHeader } from '@/components/citizen/CitizenPageChrome'
 import { Modal } from '@/components/ui/Modal'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import { mockTaxObligations, type TaxObligation } from '@/data/citizenPortal'
+import {
+  mockCitizenPayments,
+  mockTaxObligations,
+  type TaxObligation,
+} from '@/data/citizenPortal'
 import { formatCOP } from '@/lib/money'
 
 export function CitizenImpuestosPage() {
@@ -27,126 +32,150 @@ export function CitizenImpuestosPage() {
 
   const totalDeuda = filtered.reduce((acc, item) => acc + item.saldo, 0)
 
+  const confirmPay = () => {
+    if (!paying) return
+    setItems((prev) =>
+      prev.map((row) =>
+        row.id === paying.id
+          ? { ...row, saldo: 0, estado: 'Al día', estadoTone: 'success' }
+          : row,
+      ),
+    )
+    setPaying(null)
+  }
+
   return (
-    <div className="animate-enter mt-8">
-      <header className="max-w-2xl">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-          Impuestos
-        </p>
-        <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl font-semibold text-[var(--text)]">
-          Obligaciones y pagos
-        </h1>
-        <p className="mt-2 text-sm text-[var(--text-muted)]">
-          Consulta predial e ICA. Los montos están en COP. El pago PSE es una simulación.
-        </p>
-      </header>
+    <>
+      <CitizenPageHeader
+        eyebrow="Servicio ciudadano"
+        title="Impuestos"
+        description="Consulta deudas, conceptos y pagos. PSE simulado (demo)."
+        iconClass="bi bi-bank"
+      />
 
-      <form onSubmit={onSearch} className="glass-panel mt-6 rounded-[var(--radius-xl)] p-4 md:p-5">
-        <label className="block">
-          <span className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-subtle)]">
-            Buscar por ficha, ICA o texto
-          </span>
-          <div className="relative">
-            <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[var(--text-subtle)]" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="h-12 w-full rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] pr-4 pl-10 text-sm text-[var(--text)] outline-none focus:border-[var(--border-strong)]"
-              placeholder="Ej. 01-02-003-00045 o ICA-2026"
-            />
+      <div className="row mb-3">
+        <div className="col-md-8">
+          <form onSubmit={onSearch}>
+            <div className="input-group">
+              <span className="input-group-text">
+                <i className="bi bi-search" />
+              </span>
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="form-control"
+                placeholder="Buscar ficha o ICA…"
+              />
+            </div>
+          </form>
+        </div>
+        <div className="col-md-4">
+          <div className="info-box mb-0">
+            <span className="info-box-icon text-bg-warning">
+              <i className="bi bi-cash-stack" />
+            </span>
+            <div className="info-box-content">
+              <span className="info-box-text">Total a pagar</span>
+              <span className="info-box-number">{formatCOP(totalDeuda)}</span>
+            </div>
           </div>
-        </label>
-        <p className="mt-3 text-sm text-[var(--text-muted)]">
-          Saldo filtrado:{' '}
-          <strong className="text-[var(--text)]">{formatCOP(totalDeuda)}</strong>
-        </p>
-      </form>
+        </div>
+      </div>
 
-      <ul className="mt-4 space-y-3">
-        {filtered.map((item) => (
-          <li key={item.id} className="glass-panel rounded-[var(--radius-xl)] p-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-subtle)]">
-                  {item.concepto} · vigencia {item.vigencia}
-                </p>
-                <h2 className="mt-1 font-[family-name:var(--font-display)] text-xl font-semibold text-[var(--text)]">
-                  {item.referencia}
-                </h2>
-                <p className="mt-1 text-sm text-[var(--text-muted)]">{item.detalle}</p>
-              </div>
-              <StatusBadge tone={item.estadoTone}>{item.estado}</StatusBadge>
-            </div>
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-              <p className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--text)]">
-                <CreditCard className="h-4 w-4 text-[var(--text-subtle)]" />
-                {formatCOP(item.saldo)}
-              </p>
-              <button
-                type="button"
-                disabled={item.saldo <= 0}
-                onClick={() => setPaying(item)}
-                className="rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {item.saldo <= 0 ? 'Al día' : 'Pagar con PSE'}
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
+      <div className="card mb-3">
+        <div className="card-header">
+          <h3 className="card-title">Obligaciones</h3>
+        </div>
+        <div className="card-body p-0">
+          <div className="table-responsive">
+            <table className="table table-hover mb-0 align-middle">
+              <thead>
+                <tr>
+                  <th>Concepto</th>
+                  <th>Referencia</th>
+                  <th>Saldo</th>
+                  <th>Estado</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((item) => (
+                  <tr key={item.id}>
+                    <td>
+                      <div className="fw-semibold">{item.concepto}</div>
+                      <small className="text-body-secondary">{item.vigencia}</small>
+                    </td>
+                    <td>
+                      <div>{item.referencia}</div>
+                      <small className="text-body-secondary">{item.detalle}</small>
+                    </td>
+                    <td className="fw-bold">{formatCOP(item.saldo)}</td>
+                    <td>
+                      <StatusBadge tone={item.estadoTone}>{item.estado}</StatusBadge>
+                    </td>
+                    <td className="text-end">
+                      {item.saldo > 0 && (
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-primary"
+                          onClick={() => setPaying(item)}
+                        >
+                          Pagar PSE
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div className="card mb-3">
+        <div className="card-header">
+          <h3 className="card-title">Pagos realizados</h3>
+        </div>
+        <div className="card-body p-0">
+          <ul className="list-group list-group-flush">
+            {mockCitizenPayments.map((p) => (
+              <li key={p.id} className="list-group-item d-flex justify-content-between">
+                <span>
+                  {p.concepto} · {p.fecha} · {p.canal}
+                </span>
+                <span className="fw-bold text-success">{formatCOP(p.valor)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      <p className="small text-body-secondary">
+        <Link to="/ciudadano/expediente">Ver historial en expediente</Link>
+      </p>
 
       <Modal
         open={!!paying}
         title="Pago PSE (demo)"
-        description="Simulación de botón de pagos. No se realiza cobro real."
+        description={paying ? `${paying.concepto} · ${paying.referencia}` : undefined}
         onClose={() => setPaying(null)}
         footer={
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              className="rounded-full border border-[var(--border)] px-4 py-2 text-sm font-semibold"
-              onClick={() => setPaying(null)}
-            >
+          <>
+            <button type="button" className="btn btn-outline-secondary" onClick={() => setPaying(null)}>
               Cancelar
             </button>
-            <button
-              type="button"
-              className="rounded-full bg-[var(--cta)] px-4 py-2 text-sm font-bold text-[var(--cta-text)]"
-              onClick={() => {
-                if (!paying) return
-                setItems((prev) =>
-                  prev.map((row) =>
-                    row.id === paying.id
-                      ? { ...row, saldo: 0, estado: 'Al día', estadoTone: 'success' }
-                      : row,
-                  ),
-                )
-                setPaying(null)
-              }}
-            >
-              Confirmar pago demo
+            <button type="button" className="btn btn-success" onClick={confirmPay}>
+              Confirmar pago simulado
             </button>
-          </div>
+          </>
         }
       >
-        <div className="space-y-2 text-sm text-[var(--text-muted)]">
-          <p>
-            Concepto:{' '}
-            <strong className="text-[var(--text)]">{paying?.concepto}</strong>
+        {paying && (
+          <p className="mb-0">
+            Se simulará el pago de <strong>{formatCOP(paying.saldo)}</strong>. No hay cobro real.
           </p>
-          <p>
-            Referencia:{' '}
-            <strong className="text-[var(--text)]">{paying?.referencia}</strong>
-          </p>
-          <p>
-            Valor:{' '}
-            <strong className="text-[var(--text)]">
-              {paying ? formatCOP(paying.saldo) : '—'}
-            </strong>
-          </p>
-          <p>Banco simulado: Bancolombia · ref. PSE-DEMO-9912</p>
-        </div>
+        )}
       </Modal>
-    </div>
+    </>
   )
 }

@@ -1,15 +1,7 @@
-import {
-  AlertTriangle,
-  ArrowLeft,
-  ArrowUpRight,
-  CircleDollarSign,
-  FileWarning,
-  Landmark,
-  Timer,
-} from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { KpiCard, SectionHeader } from '@/components/KpiCard'
+import { useSession } from '@/auth/SessionContext'
+import { KpiCard, SectionHeader, type SmallBoxTone } from '@/components/KpiCard'
 import { Modal } from '@/components/ui/Modal'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import {
@@ -17,8 +9,8 @@ import {
   type KpiDetailItem,
   type KpiPanel,
 } from '@/data/dashboardKpis'
+import { filterGroupsForRole } from '@/data/demoRoles'
 import { currentEntity } from '@/data/entity'
-import { moduleGroups } from '@/data/modules'
 import { formatCOP } from '@/lib/money'
 
 const activities = [
@@ -30,9 +22,9 @@ const activities = [
   },
   {
     title: 'PQRSD #1842 cerca del término',
-    meta: 'Ventanilla · 2 días restantes',
+    meta: 'Planeación · 2 días restantes',
     tone: 'danger' as const,
-    to: '/app/modulos/pqrsd',
+    to: '/app/modulos/pqrsd-vencimientos',
   },
   {
     title: 'Recaudo predial del día',
@@ -43,12 +35,14 @@ const activities = [
   {
     title: 'CDP solicitado por Planeación',
     meta: 'Presupuesto · pendiente de firma',
-    tone: 'default' as const,
+    tone: 'primary' as const,
     to: '/app/modulos/presupuesto',
   },
 ]
 
 export function DashboardPage() {
+  const { role } = useSession()
+  const visibleGroups = useMemo(() => filterGroupsForRole(role ?? undefined), [role])
   const [panel, setPanel] = useState<KpiPanel | null>(null)
   const [detail, setDetail] = useState<KpiDetailItem | null>(null)
 
@@ -62,30 +56,38 @@ export function DashboardPage() {
     setDetail(null)
   }
 
+  const firstModule = visibleGroups[0]?.items[0]?.slug
+
   return (
-    <div>
+    <>
       <SectionHeader
-        eyebrow="Vista gerencial"
-        title={`Buen día, ${currentEntity.name}`}
-        description="Resumen operativo de demostración. Haz clic en cada indicador para ver el listado y el detalle. Montos en pesos colombianos (COP)."
+        eyebrow={`Vista · ${role?.label ?? 'Demo'}`}
+        title={`Buen día — ${currentEntity.name}`}
+        description={
+          role?.id === 'admin'
+            ? 'Resumen operativo. Clic en cada indicador. Montos en COP.'
+            : `Perfil ${role?.label}: el menú lateral solo muestra tus módulos.`
+        }
         action={
-          <Link
-            to="/app/modulos/predial"
-            className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
-          >
-            Ir a Predial
-            <ArrowUpRight className="h-4 w-4" />
-          </Link>
+          firstModule ? (
+            <Link to={`/app/modulos/${firstModule}`} className="btn btn-primary">
+              Ir a {visibleGroups[0]?.items[0]?.label} <i className="bi bi-arrow-right-short" />
+            </Link>
+          ) : (
+            <Link to="/ciudadano" className="btn btn-primary">
+              Portal ciudadano
+            </Link>
+          )
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="row">
         <KpiCard
           label="Recaudo del mes"
           value={formatCOP(1_280_450_000)}
-          hint="Predial + ICA acumulado (COP)"
+          hint="Predial + ICA (COP)"
           trend="+12%"
-          icon={CircleDollarSign}
+          iconClass="bi bi-cash-coin"
           tone="success"
           onClick={() => openPanel('recaudo')}
         />
@@ -93,99 +95,81 @@ export function DashboardPage() {
           label="Ejecución presupuestal"
           value="64%"
           hint="Compromisos vs apropiación"
-          trend="En meta"
-          icon={Landmark}
-          tone="default"
+          trend="meta"
+          iconClass="bi bi-pie-chart"
+          tone="primary"
           onClick={() => openPanel('ejecucion')}
         />
         <KpiCard
           label="Contratos en riesgo"
           value="7"
           hint="Pólizas o plazos críticos"
-          trend="Revisar"
-          icon={AlertTriangle}
+          iconClass="bi bi-exclamation-triangle"
           tone="warning"
           onClick={() => openPanel('contratos')}
         />
         <KpiCard
           label="PQRSD por vencer"
           value="14"
-          hint="Términos legales < 3 días"
-          trend="Urgente"
-          icon={Timer}
+          hint="Términos legales bajo 3 días"
+          iconClass="bi bi-hourglass-split"
           tone="danger"
           onClick={() => openPanel('pqrsd')}
         />
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <section className="glass-panel rounded-[var(--radius-lg)] p-5 md:p-6">
-          <div className="mb-5 flex items-center justify-between gap-3">
-            <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold text-[var(--text)]">
-              Actividad reciente
-            </h2>
-            <FileWarning className="h-5 w-5 text-[var(--text-subtle)]" />
+      <div className="row">
+        <div className="col-lg-7">
+          <div className="card mb-4">
+            <div className="card-header">
+              <h3 className="card-title">Actividad reciente</h3>
+            </div>
+            <div className="card-body p-0">
+              <ul className="list-group list-group-flush">
+                {activities.map((item) => (
+                  <li key={item.title} className="list-group-item">
+                    <Link to={item.to} className="d-flex justify-content-between align-items-start text-decoration-none text-body">
+                      <div>
+                        <div className="fw-semibold">{item.title}</div>
+                        <div className="small text-body-secondary">{item.meta}</div>
+                      </div>
+                      <span className={`badge text-bg-${item.tone === 'primary' ? 'primary' : item.tone}`}>
+                        {item.tone}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
-          <ul className="space-y-3">
-            {activities.map((item) => (
-              <li key={item.title}>
-                <Link
-                  to={item.to}
-                  className="flex items-start justify-between gap-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] px-4 py-3 transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--bg-muted)]"
-                >
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--text)]">{item.title}</p>
-                    <p className="mt-1 text-xs text-[var(--text-muted)]">{item.meta}</p>
-                  </div>
-                  <span
-                    className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${
-                      item.tone === 'success'
-                        ? 'bg-[var(--success)]'
-                        : item.tone === 'warning'
-                          ? 'bg-[var(--warning)]'
-                          : item.tone === 'danger'
-                            ? 'bg-[var(--danger)]'
-                            : 'bg-[var(--accent)]'
-                    }`}
-                  />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
+        </div>
 
-        <section className="glass-panel rounded-[var(--radius-lg)] p-5 md:p-6">
-          <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold text-[var(--text)]">
-            Módulos prioritarios
-          </h2>
-          <p className="mt-2 text-sm text-[var(--text-muted)]">
-            Accesos rápidos del catálogo modular. El orden final lo define cada alcaldía en reunión de alcance.
-          </p>
-          <div className="mt-5 space-y-2">
-            {moduleGroups.slice(0, 4).map((group) => {
-              const Icon = group.icon
-              const first = group.items[0]
-              return (
-                <Link
-                  key={group.id}
-                  to={`/app/modulos/${first.slug}`}
-                  className="flex items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] px-3 py-3 transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--bg-muted)]"
-                >
-                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
-                    <Icon className="h-4 w-4" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-[var(--text)]">{group.label}</span>
-                    <span className="block truncate text-xs text-[var(--text-muted)]">
-                      {group.items.length} submódulos
-                    </span>
-                  </span>
-                  <ArrowUpRight className="h-4 w-4 text-[var(--text-subtle)]" />
-                </Link>
-              )
-            })}
+        <div className="col-lg-5">
+          <div className="card mb-4">
+            <div className="card-header">
+              <h3 className="card-title">Módulos prioritarios</h3>
+            </div>
+            <div className="card-body p-0">
+              <ul className="nav flex-column">
+                {visibleGroups.slice(0, 4).map((group) => {
+                  const first = group.items[0]
+                  return (
+                    <li key={group.id} className="nav-item">
+                      <Link to={`/app/modulos/${first.slug}`} className="nav-link">
+                        <i className="nav-icon bi bi-folder2-open me-2" />
+                        {group.label}
+                        <span className="badge text-bg-secondary float-end">{group.items.length}</span>
+                      </Link>
+                    </li>
+                  )
+                })}
+                {visibleGroups.length === 0 && (
+                  <li className="nav-item px-3 py-3 text-body-secondary">Sin módulos para este perfil.</li>
+                )}
+              </ul>
+            </div>
           </div>
-        </section>
+        </div>
       </div>
 
       <Modal
@@ -196,58 +180,40 @@ export function DashboardPage() {
         wide
         footer={
           panel && (
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm text-[var(--text-muted)]">{panel.items.length} registros</p>
-              <div className="flex gap-2">
-                {panel.moduleLink && (
-                  <Link
-                    to={panel.moduleLink}
-                    onClick={closeAll}
-                    className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] px-4 py-2 text-sm font-semibold text-[var(--text)]"
-                  >
-                    Ir al módulo
-                    <ArrowUpRight className="h-4 w-4" />
-                  </Link>
-                )}
-                <button
-                  type="button"
-                  onClick={closeAll}
-                  className="rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white"
-                >
-                  Cerrar
-                </button>
-              </div>
-            </div>
+            <>
+              {panel.moduleLink && (
+                <Link to={panel.moduleLink} onClick={closeAll} className="btn btn-outline-primary">
+                  Ir al módulo
+                </Link>
+              )}
+              <button type="button" className="btn btn-primary" onClick={closeAll}>
+                Cerrar
+              </button>
+            </>
           )
         }
       >
         {panel && (
-          <ul className="space-y-2">
+          <div className="list-group">
             {panel.items.map((item) => (
-              <li key={item.id}>
-                <button
-                  type="button"
-                  onClick={() => setDetail(item)}
-                  className="flex w-full items-start justify-between gap-3 rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] px-4 py-3 text-left transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--bg-muted)]"
-                >
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-xs font-bold text-[var(--accent)]">{item.code}</span>
-                      <StatusBadge tone={item.statusTone}>{item.status}</StatusBadge>
-                    </div>
-                    <p className="mt-1 text-sm font-semibold text-[var(--text)]">{item.title}</p>
-                    <p className="mt-0.5 text-xs text-[var(--text-muted)]">{item.subtitle}</p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    {item.amount && (
-                      <p className="text-sm font-semibold tabular-nums text-[var(--text)]">{item.amount}</p>
-                    )}
-                    <p className="mt-1 text-xs font-semibold text-[var(--accent)]">Ver detalle →</p>
-                  </div>
-                </button>
-              </li>
+              <button
+                key={item.id}
+                type="button"
+                className="list-group-item list-group-item-action"
+                onClick={() => setDetail(item)}
+              >
+                <div className="d-flex w-100 justify-content-between">
+                  <h6 className="mb-1">
+                    <span className="text-primary me-2">{item.code}</span>
+                    {item.title}
+                  </h6>
+                  <StatusBadge tone={item.statusTone}>{item.status}</StatusBadge>
+                </div>
+                <p className="mb-1 small text-body-secondary">{item.subtitle}</p>
+                {item.amount && <small className="fw-semibold">{item.amount}</small>}
+              </button>
             ))}
-          </ul>
+          </div>
         )}
       </Modal>
 
@@ -258,54 +224,40 @@ export function DashboardPage() {
         onClose={() => setDetail(null)}
         wide
         footer={
-          detail && (
-            <div className="flex flex-wrap justify-between gap-2">
-              <button
-                type="button"
-                onClick={() => setDetail(null)}
-                className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] px-4 py-2 text-sm font-semibold"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Volver al listado
-              </button>
-              <button
-                type="button"
-                onClick={closeAll}
-                className="rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white"
-              >
-                Cerrar
-              </button>
-            </div>
-          )
+          <>
+            <button type="button" className="btn btn-outline-secondary" onClick={() => setDetail(null)}>
+              Volver al listado
+            </button>
+            <button type="button" className="btn btn-primary" onClick={closeAll}>
+              Cerrar
+            </button>
+          </>
         }
       >
         {detail && (
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-2">
+          <>
+            <div className="mb-3">
               <StatusBadge tone={detail.statusTone}>{detail.status}</StatusBadge>
-              {detail.amount && (
-                <span className="rounded-full bg-[var(--bg-muted)] px-3 py-1 text-sm font-semibold">
-                  {detail.amount}
-                </span>
-              )}
+              {detail.amount && <span className="badge text-bg-light border ms-2">{detail.amount}</span>}
             </div>
-            <dl className="grid gap-3 sm:grid-cols-2">
+            <div className="row g-3">
               {detail.fields.map((field) => (
-                <div key={field.label} className="rounded-xl border border-[var(--border)] bg-[var(--bg-muted)] p-3">
-                  <dt className="text-xs font-semibold tracking-[0.1em] text-[var(--text-subtle)] uppercase">
-                    {field.label}
-                  </dt>
-                  <dd className="mt-1 text-sm font-semibold text-[var(--text)]">{field.value}</dd>
+                <div key={field.label} className="col-sm-6">
+                  <div className="border rounded p-3 h-100">
+                    <div className="small text-body-secondary text-uppercase">{field.label}</div>
+                    <div className="fw-semibold">{field.value}</div>
+                  </div>
                 </div>
               ))}
-            </dl>
-            <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
-              <p className="text-xs font-semibold tracking-[0.1em] text-[var(--text-subtle)] uppercase">Notas</p>
-              <p className="mt-2 text-sm leading-relaxed text-[var(--text-muted)]">{detail.notes}</p>
             </div>
-          </div>
+            <div className="alert alert-secondary mt-3 mb-0">
+              <strong>Notas:</strong> {detail.notes}
+            </div>
+          </>
         )}
       </Modal>
-    </div>
+    </>
   )
 }
+
+export type _DashTone = SmallBoxTone

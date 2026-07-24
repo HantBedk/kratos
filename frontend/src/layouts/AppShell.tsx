@@ -1,7 +1,7 @@
-import { Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { BrandMark } from '@/components/BrandMark'
+import { useAdminLteConsole } from '@/adminlte/useAdminLteConsole'
+import { useSession } from '@/auth/SessionContext'
 import { SidebarNav } from '@/components/SidebarNav'
 import {
   GlobalSearch,
@@ -10,115 +10,131 @@ import {
 } from '@/components/shell/TopbarControls'
 import { Modal } from '@/components/ui/Modal'
 import { currentEntity } from '@/data/entity'
+import { findModule } from '@/data/modules'
 
 function breadcrumbFromPath(pathname: string) {
-  if (pathname.includes('/dashboard')) return 'Dashboard gerencial'
+  if (pathname.includes('/dashboard')) {
+    return { section: 'Consola', page: 'Dashboard' }
+  }
   if (pathname.includes('/modulos/')) {
     const slug = pathname.split('/modulos/')[1]
-    return slug?.replace(/-/g, ' ') ?? 'Módulo'
+    const mod = findModule(slug ?? '')
+    return {
+      section: 'Módulos',
+      page: mod?.label ?? slug?.replace(/-/g, ' ') ?? 'Módulo',
+    }
   }
-  return 'Consola'
+  return { section: 'Consola', page: 'Inicio' }
 }
 
 export function AppShell() {
-  const [mobileOpen, setMobileOpen] = useState(false)
+  useAdminLteConsole()
   const [entityOpen, setEntityOpen] = useState(false)
   const location = useLocation()
   const crumb = breadcrumbFromPath(location.pathname)
+  const { role } = useSession()
 
   return (
-    <div className="app-atmosphere min-h-screen">
-      <div className="flex min-h-screen">
-        <aside
-          className={`fixed inset-y-0 left-0 z-40 flex w-[var(--sidebar-width)] flex-col bg-[var(--bg-sidebar)] text-[var(--text-on-dark)] transition-transform duration-300 lg:static lg:translate-x-0 ${
-            mobileOpen ? 'translate-x-0' : '-translate-x-full'
-          }`}
-        >
-          <div className="flex h-[var(--topbar-height)] items-center justify-between px-4">
-            <BrandMark to="/app/dashboard" inverted />
-            <button
-              type="button"
-              className="grid h-9 w-9 place-items-center rounded-lg text-[var(--text-on-dark)] lg:hidden"
-              onClick={() => setMobileOpen(false)}
-              aria-label="Cerrar menú"
-            >
-              <X className="h-5 w-5" />
-            </button>
+    <div className="app-wrapper">
+      <nav className="app-header navbar navbar-expand bg-body">
+        <div className="container-fluid">
+          <ul className="navbar-nav">
+            <li className="nav-item">
+              <a
+                className="nav-link"
+                data-lte-toggle="sidebar"
+                href="#"
+                role="button"
+                aria-label="Alternar menú lateral"
+                onClick={(e) => e.preventDefault()}
+              >
+                <i className="bi bi-list" />
+              </a>
+            </li>
+            <li className="nav-item d-none d-md-block">
+              <span className="nav-link disabled">Consola · {role?.label ?? 'Demo'}</span>
+            </li>
+          </ul>
+
+          <div className="d-none d-lg-flex flex-grow-1 justify-content-center px-3" style={{ maxWidth: '28rem' }}>
+            <GlobalSearch />
           </div>
 
-          <div className="px-4 pb-3">
+          <ul className="navbar-nav ms-auto">
+            <li className="nav-item d-lg-none">
+              <div className="px-2 py-1" style={{ minWidth: '12rem' }}>
+                <GlobalSearch />
+              </div>
+            </li>
+            <NotificationsMenu />
+            <UserMenu onOpenEntity={() => setEntityOpen(true)} />
+          </ul>
+        </div>
+      </nav>
+
+      <aside className="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
+        <div className="sidebar-brand">
+          <Link to="/app/dashboard" className="brand-link">
+            <span className="brand-image-icon brand-image" aria-hidden>
+              <i className="bi bi-building" />
+            </span>
+            <span className="brand-text fw-light">{currentEntity.name}</span>
+          </Link>
+        </div>
+
+        <div className="sidebar-wrapper">
+          <div className="px-3 pb-2">
             <button
               type="button"
+              className="btn btn-sm btn-outline-light w-100 text-start"
               onClick={() => setEntityOpen(true)}
-              className="w-full rounded-2xl border border-white/10 bg-white/5 px-3 py-3 text-left transition-colors hover:bg-white/10"
             >
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-on-dark-muted)]">
-                Entidad demo
-              </p>
-              <p className="mt-1 text-sm font-semibold text-[var(--text-on-dark)]">{currentEntity.name}</p>
-              <p className="mt-1 text-[11px] text-[var(--text-on-dark-muted)]">Clic para ver datos</p>
+              <span className="d-block small text-uppercase opacity-75">Entidad demo</span>
+              <span className="fw-semibold">{currentEntity.name}</span>
+              <span className="d-block small">Perfil: {role?.label ?? '—'}</span>
             </button>
           </div>
-
-          <div className="flex-1 overflow-y-auto">
+          <nav className="mt-2" aria-label="Módulos del ERP">
             <SidebarNav />
-          </div>
-
-          <div className="border-t border-white/10 p-4">
-            <Link
-              to="/ciudadano"
-              onClick={() => setMobileOpen(false)}
-              className="block rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-center text-sm font-semibold text-[var(--text-on-dark)] transition-colors hover:bg-white/10"
-            >
-              Ver portal ciudadano
+          </nav>
+          <div className="px-3 py-3 border-top mt-auto">
+            <Link to="/ciudadano" className="btn btn-outline-primary btn-sm w-100">
+              Portal ciudadano
             </Link>
           </div>
-        </aside>
-
-        {mobileOpen && (
-          <button
-            type="button"
-            className="fixed inset-0 z-30 bg-black/40 lg:hidden"
-            aria-label="Cerrar overlay"
-            onClick={() => setMobileOpen(false)}
-          />
-        )}
-
-        <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-20 flex h-[var(--topbar-height)] items-center gap-2 border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--bg)_82%,transparent)] px-3 backdrop-blur-xl md:gap-3 md:px-6">
-            <button
-              type="button"
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[var(--border)] bg-[var(--surface-solid)] text-[var(--text)] lg:hidden"
-              onClick={() => setMobileOpen(true)}
-              aria-label="Abrir menú"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-
-            <div className="hidden min-w-0 shrink-0 lg:block lg:max-w-[14rem] xl:max-w-[18rem]">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-subtle)]">
-                Consola institucional
-              </p>
-              <p className="truncate text-sm font-semibold capitalize text-[var(--text)]">{crumb}</p>
-            </div>
-
-            {/* Búsqueda: llena el hueco en móvil; en web queda a la izquierda */}
-            <GlobalSearch />
-
-            <div className="ml-auto flex shrink-0 items-center gap-2">
-              <NotificationsMenu />
-              <UserMenu onOpenEntity={() => setEntityOpen(true)} />
-            </div>
-          </header>
-
-          <main className="relative flex-1 px-4 py-6 md:px-6 md:py-8">
-            <div className="pointer-events-none absolute inset-0 grid-overlay opacity-60" />
-            <div className="relative mx-auto max-w-7xl animate-enter">
-              <Outlet />
-            </div>
-          </main>
         </div>
-      </div>
+      </aside>
+
+      <main className="app-main">
+        <div className="app-content-header">
+          <div className="container-fluid">
+            <div className="row">
+              <div className="col-sm-6">
+                <h3 className="mb-0">{crumb.page}</h3>
+              </div>
+              <div className="col-sm-6">
+                <ol className="breadcrumb float-sm-end">
+                  <li className="breadcrumb-item">{crumb.section}</li>
+                  <li className="breadcrumb-item active" aria-current="page">
+                    {crumb.page}
+                  </li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="app-content">
+          <div className="container-fluid kratos-panel">
+            <Outlet />
+          </div>
+        </div>
+      </main>
+
+      <footer className="app-footer">
+        <div className="float-end d-none d-sm-inline">http://localhost:5173</div>
+        <strong>Kratos · SelvaTic</strong> — AdminLTE 4
+      </footer>
 
       <Modal
         open={entityOpen}
@@ -126,30 +142,28 @@ export function AppShell() {
         description="Entidad activa en esta sesión demo (multi-tenant)."
         onClose={() => setEntityOpen(false)}
         footer={
-          <button
-            type="button"
-            className="rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white"
-            onClick={() => setEntityOpen(false)}
-          >
+          <button type="button" className="btn btn-primary" onClick={() => setEntityOpen(false)}>
             Entendido
           </button>
         }
       >
-        <dl className="grid gap-3 sm:grid-cols-2">
+        <div className="row g-3">
           {[
             ['NIT', currentEntity.nit],
             ['Categoría', currentEntity.category],
             ['Departamento', currentEntity.department],
             ['Vigencia', currentEntity.vigencia],
-            ['Módulos activos', 'Suite completa (demo)'],
+            ['Perfil activo', role?.label ?? '—'],
             ['Licencia', 'Uso SaaS · piloto'],
           ].map(([label, value]) => (
-            <div key={label} className="rounded-xl border border-[var(--border)] bg-[var(--bg-muted)] p-3">
-              <dt className="text-xs font-semibold tracking-[0.1em] text-[var(--text-subtle)] uppercase">{label}</dt>
-              <dd className="mt-1 text-sm font-semibold text-[var(--text)]">{value}</dd>
+            <div key={label} className="col-sm-6">
+              <div className="border rounded p-3 h-100">
+                <div className="small text-body-secondary text-uppercase">{label}</div>
+                <div className="fw-semibold">{value}</div>
+              </div>
             </div>
           ))}
-        </dl>
+        </div>
       </Modal>
     </div>
   )

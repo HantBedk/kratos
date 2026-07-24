@@ -1,4 +1,3 @@
-import { X } from 'lucide-react'
 import { useEffect, type ReactNode } from 'react'
 
 type ModalProps = {
@@ -11,6 +10,7 @@ type ModalProps = {
   wide?: boolean
 }
 
+/** Modal Bootstrap 5 (API controlada por React). */
 export function Modal({ open, title, description, onClose, children, footer, wide }: ModalProps) {
   useEffect(() => {
     if (!open) return
@@ -18,42 +18,41 @@ export function Modal({ open, title, description, onClose, children, footer, wid
       if (e.key === 'Escape') onClose()
     }
     document.addEventListener('keydown', onKey)
-    document.body.style.overflow = 'hidden'
+    document.body.classList.add('modal-open')
     return () => {
       document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = ''
+      document.body.classList.remove('modal-open')
     }
   }, [open, onClose])
 
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-6">
-      <button type="button" className="absolute inset-0 bg-[rgba(7,17,31,0.55)] backdrop-blur-[2px]" aria-label="Cerrar" onClick={onClose} />
+    <>
+      <div className="modal-backdrop fade show" onClick={onClose} />
       <div
+        className="modal fade show d-block"
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
-        className={`relative z-10 flex max-h-[92vh] w-full flex-col rounded-t-[var(--radius-xl)] border border-[var(--border)] bg-[var(--surface-solid)] shadow-[var(--shadow-lg)] sm:rounded-[var(--radius-xl)] ${
-          wide ? 'sm:max-w-3xl' : 'sm:max-w-xl'
-        }`}
+        aria-labelledby="kratos-modal-title"
       >
-        <header className="flex items-start justify-between gap-4 border-b border-[var(--border)] px-5 py-4">
-          <div>
-            <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold text-[var(--text)]">{title}</h2>
-            {description && <p className="mt-1 text-sm text-[var(--text-muted)]">{description}</p>}
+        <div className={`modal-dialog modal-dialog-scrollable ${wide ? 'modal-lg' : ''}`}>
+          <div className="modal-content">
+            <div className="modal-header">
+              <div>
+                <h2 className="modal-title fs-5" id="kratos-modal-title">
+                  {title}
+                </h2>
+                {description ? <p className="text-body-secondary small mb-0 mt-1">{description}</p> : null}
+              </div>
+              <button type="button" className="btn-close" aria-label="Cerrar" onClick={onClose} />
+            </div>
+            <div className="modal-body">{children}</div>
+            {footer ? <div className="modal-footer">{footer}</div> : null}
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="grid h-9 w-9 place-items-center rounded-full border border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--bg-muted)]"
-            aria-label="Cerrar diálogo"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </header>
-        <div className="overflow-y-auto px-5 py-4">{children}</div>
-        {footer && <footer className="border-t border-[var(--border)] px-5 py-4">{footer}</footer>}
+        </div>
       </div>
-    </div>
+    </>
   )
 }

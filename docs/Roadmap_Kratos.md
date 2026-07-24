@@ -25,7 +25,7 @@
 - Repositorio y entorno Docker Compose  
 - Backend Laravel 13 (API)  
 - Frontend React 19 + TypeScript + Vite (SPA)  
-- UI Tailwind CSS 4 (+ referencia AdminLTE)  
+- UI AdminLTE 4 + Bootstrap 5 (todo el frontend; sin Tailwind)  
 - Multi-tenant (aislamiento por alcaldía)  
 - IAM: usuarios, roles, auditoría básica  
 - Carga de archivos / expediente digital básico  

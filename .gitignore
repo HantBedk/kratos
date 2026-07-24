@@ -39,3 +39,7 @@ coverage/
 .vite/
 .turbo/
 .cache/
+
+# Documentación Markdown: siempre versionar (nunca ignorar)
+!*.md
+!**/*.md

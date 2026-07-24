@@ -1,5 +1,5 @@
-import { Download } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
+import { CitizenHelpNote, CitizenPageHeader } from '@/components/citizen/CitizenPageChrome'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { mockCertificates, type CitizenCertificate } from '@/data/citizenPortal'
 
@@ -26,93 +26,100 @@ export function CitizenCertificadosPage() {
       estadoTone: 'accent',
     }
     setItems((prev) => [nuevo, ...prev])
-    setFlash(`Solicitud ${numero} registrada (demo).`)
+    setFlash(`Solicitud ${numero} enviada. Cuando diga “Aprobado” podrás descargarlo.`)
   }
 
   return (
-    <div className="animate-enter mt-8">
-      <header className="max-w-2xl">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-          Certificados
-        </p>
-        <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl font-semibold text-[var(--text)]">
-          Solicitar y descargar
-        </h1>
-        <p className="mt-2 text-sm text-[var(--text-muted)]">
-          Residencia y estratificación. La aprobación se refleja en el expediente.
-        </p>
-      </header>
+    <>
+      <CitizenPageHeader
+        eyebrow="Servicio ciudadano"
+        title="Pedir un certificado"
+        description="Solicita certificados de residencia o estratificación. Cuando se apruebe, descárgalo aquí."
+        iconClass="bi bi-file-earmark-check"
+      />
+      <CitizenHelpNote>
+        Ten a la mano tu <strong>nombre completo</strong> y cédula. En la demo no se piden anexos reales.
+      </CitizenHelpNote>
 
-      <form
-        onSubmit={onSubmit}
-        className="glass-panel mt-6 space-y-4 rounded-[var(--radius-xl)] p-5"
-      >
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-subtle)]">
-              Tipo de certificado
-            </span>
-            <select
-              value={tipo}
-              onChange={(e) => setTipo(e.target.value as (typeof TIPOS)[number])}
-              className="h-11 w-full rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] px-3 text-sm text-[var(--text)]"
-            >
-              {TIPOS.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-subtle)]">
-              Solicitante
-            </span>
-            <input
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              required
-              className="h-11 w-full rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] px-3 text-sm text-[var(--text)]"
-            />
-          </label>
+      <div className="card mb-3">
+        <div className="card-header">
+          <h3 className="card-title">Nueva solicitud</h3>
         </div>
-        <button
-          type="submit"
-          className="rounded-full bg-[var(--cta)] px-5 py-2.5 text-sm font-bold text-[var(--cta-text)] hover:bg-[var(--cta-hover)]"
-        >
-          Solicitar (demo)
-        </button>
-        {flash && <p className="text-sm font-semibold text-[var(--success)]">{flash}</p>}
-      </form>
-
-      <ul className="mt-6 space-y-3">
-        {items.map((item) => (
-          <li key={item.id} className="glass-panel rounded-[var(--radius-xl)] p-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-subtle)]">
-                  {item.tipo} · {item.fecha}
-                </p>
-                <h2 className="mt-1 font-semibold text-[var(--text)]">{item.numero}</h2>
-                <p className="mt-1 text-sm text-[var(--text-muted)]">{item.solicitante}</p>
+        <div className="card-body">
+          <form onSubmit={onSubmit}>
+            <div className="row g-3">
+              <div className="col-md-6">
+                <label className="form-label">¿Qué certificado necesitas?</label>
+                <select
+                  value={tipo}
+                  onChange={(e) => setTipo(e.target.value as (typeof TIPOS)[number])}
+                  className="form-select"
+                >
+                  {TIPOS.map((t) => (
+                    <option key={t} value={t}>
+                      Certificado de {t.toLowerCase()}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <StatusBadge tone={item.estadoTone}>{item.estado}</StatusBadge>
+              <div className="col-md-6">
+                <label className="form-label">Tu nombre completo</label>
+                <input
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  required
+                  className="form-control"
+                />
+              </div>
             </div>
-            {item.estado === 'Aprobado' && (
-              <button
-                type="button"
-                className="mt-4 inline-flex items-center gap-2 rounded-full border border-[var(--border)] px-4 py-2 text-sm font-semibold text-[var(--text)] hover:border-[var(--border-strong)]"
-                onClick={() =>
-                  setFlash(`Descarga simulada de ${item.numero}.pdf (demo).`)
-                }
-              >
-                <Download className="h-4 w-4" />
-                Descargar PDF (demo)
-              </button>
-            )}
-          </li>
-        ))}
-      </ul>
-    </div>
+            <button type="submit" className="btn btn-primary mt-3">
+              Enviar solicitud
+            </button>
+            {flash && <div className="alert alert-success mt-3 mb-0">{flash}</div>}
+          </form>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-header">
+          <h3 className="card-title">Mis solicitudes</h3>
+        </div>
+        <div className="card-body p-0">
+          <div className="table-responsive">
+            <table className="table table-striped mb-0 align-middle">
+              <thead>
+                <tr>
+                  <th>Número</th>
+                  <th>Tipo</th>
+                  <th>Fecha</th>
+                  <th>Estado</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item) => (
+                  <tr key={item.id}>
+                    <td className="fw-semibold">{item.numero}</td>
+                    <td>{item.tipo}</td>
+                    <td>{item.fecha}</td>
+                    <td>
+                      <StatusBadge tone={item.estadoTone}>{item.estado}</StatusBadge>
+                    </td>
+                    <td className="text-end">
+                      {item.estado === 'Aprobado' && (
+                        <button type="button" className="btn btn-sm btn-outline-primary">
+                          <i className="bi bi-download me-1" />
+                          Descargar
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </>
   )
 }

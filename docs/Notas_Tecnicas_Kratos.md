@@ -1,20 +1,22 @@
 # Notas técnicas — Proyecto Kratos (borrador separado)
 
-**Versión:** 0.1  
-**Fecha:** 22 de julio de 2026  
+**Versión:** 0.4  
+**Fecha:** 23 de julio de 2026  
 **Importante:** Este archivo **no** es la propuesta comercial. No mezclar con `Propuesta_Kratos_ERP_Municipal_SelvaTic.md`.
 
 ---
 
-## 1. Stack acordado (construcción futura)
+## 1. Stack acordado
 
 | Capa | Tecnología |
 |------|------------|
 | Backend | PHP + Laravel 13 |
 | Frontend | React 19 + TypeScript + Vite (SPA) |
-| UI | Tailwind CSS 4 (referencia AdminLTE v4 o mínimo v3) |
+| UI (todo el frontend) | **AdminLTE 4.1** + Bootstrap 5 + Bootstrap Icons |
 | Infra local/dev | Docker Compose |
 | Arquitectura | ERP **multi-tenant** (varias alcaldías, datos aislados) |
+
+**Sin Tailwind, sin design tokens propios, sin CSS bridge.** Único CSS de UI: paquetes AdminLTE/Bootstrap vía [`frontend/src/adminlte/bootstrap.ts`](../frontend/src/adminlte/bootstrap.ts).
 
 ## 2. Principios técnicos (para cuando exista SDD)
 
@@ -23,21 +25,16 @@
 - Auditoría de acciones sensibles  
 - Archivos con control de acceso  
 - Backups y restauración definidos en operación nube  
-- Integraciones externas (PSE, SECOP, CHIP, etc.) como conectores versionados, no como núcleo duro del día 1  
+- Integraciones externas (PSE, SECOP, CHIP, etc.) como conectores versionados  
 
-## 3. Pendiente (SDD completo)
+## 3. Estado actual de la SPA
 
-Cuando el equipo autorice la fase de construcción, redactar en este directorio (u otro `docs/tecnico/`):
-
-- Glosario de dominio  
-- Specs por módulo (entradas/salidas/reglas)  
-- Modelo de datos multi-tenant  
-- Definition of Done  
-- Política de secretos y datos personales  
-
-**Estado actual:** SPA en [`frontend/`](../frontend/) (Vite + React 19 + Tailwind 4 + tema claro/oscuro). URL fija: **http://localhost:5173** (`docker compose up --build -d` o `npm run dev`). Backend Laravel pendiente.
-
-**Alcance portal / ERP (demo):** solo el **núcleo** del backlog [`Backlog_Informe_Portal_Ciudadano.md`](./Backlog_Informe_Portal_Ciudadano.md) v0.2 — portal (impuestos, PQRSD, certificados, expediente) + ERP (contratos, flujo presupuesto/tesorería/contabilidad, estampillas). Todo es **SPA visual/mock**; sin backend aún.
+- URL: **http://localhost:5173**
+- `/login` → `login-page` / `login-box`
+- `/app/*` → `layout-fixed` + `app-wrapper` (consola)
+- `/ciudadano/*` → mismo layout AdminLTE (portal)
+- Tema: `data-bs-theme` (ThemeProvider)
+- Backend Laravel pendiente
 
 ## Puerto fijo
 
@@ -49,4 +46,7 @@ Cuando el equipo autorice la fase de construcción, redactar en este directorio 
 
 | Versión | Fecha | Cambio |
 |---------|-------|--------|
+| 0.4 | 2026-07-23 | Solo AdminLTE en todo el frontend; eliminados Tailwind, tokens y Lucide |
+| 0.3 | 2026-07-23 | Consola/login con markup AdminLTE real |
+| 0.2 | 2026-07-23 | AdminLTE 4 en shell de consola |
 | 0.1 | 2026-07-22 | Borrador de stack y separación documental |

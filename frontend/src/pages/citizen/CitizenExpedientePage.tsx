@@ -1,11 +1,29 @@
-import { useMemo, useState, type FormEvent } from 'react'
-import { StatusBadge } from '@/components/ui/StatusBadge'
+import { Fragment, useMemo, useState, type FormEvent } from 'react'
+import { CitizenHelpNote, CitizenPageHeader } from '@/components/citizen/CitizenPageChrome'
+import { StatusBadge, type BadgeTone } from '@/components/ui/StatusBadge'
 import { mockExpediente } from '@/data/citizenPortal'
+
+/** Color del punto del timeline según el estado del evento. */
+const toneBg: Record<BadgeTone, string> = {
+  neutral: 'bg-secondary',
+  success: 'bg-success',
+  warning: 'bg-warning',
+  danger: 'bg-danger',
+  info: 'bg-info',
+  accent: 'bg-primary',
+}
+
+/** Icono del punto del timeline según el origen del evento. */
+const origenIcon: Record<string, string> = {
+  Certificados: 'bi-file-earmark-check',
+  Peticiones: 'bi-chat-left-text',
+  Impuestos: 'bi-cash-coin',
+  Registros: 'bi-clipboard-data',
+}
 
 export function CitizenExpedientePage() {
   const [query, setQuery] = useState(mockExpediente.documento)
   const [loaded, setLoaded] = useState(true)
-
   const eventos = useMemo(() => mockExpediente.eventos, [])
 
   const onSearch = (event: FormEvent) => {
@@ -14,73 +32,100 @@ export function CitizenExpedientePage() {
   }
 
   return (
-    <div className="animate-enter mt-8">
-      <header className="max-w-2xl">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-          Expediente
-        </p>
-        <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl font-semibold text-[var(--text)]">
-          Consulta unificada
-        </h1>
-        <p className="mt-2 text-sm text-[var(--text-muted)]">
-          Historial de impuestos, PQRSD y certificados en una sola línea de tiempo (mock).
-        </p>
-      </header>
+    <>
+      <CitizenPageHeader
+        eyebrow="Servicio ciudadano"
+        title="Ver mi historial"
+        description="Impuestos, peticiones y certificados con fechas y estado."
+        iconClass="bi bi-clock-history"
+      />
+      <CitizenHelpNote>
+        Busca con tu <strong>cédula</strong> o un <strong>número de radicado</strong>. En la demo ya hay un
+        ejemplo cargado.
+      </CitizenHelpNote>
 
-      <form onSubmit={onSearch} className="glass-panel mt-6 rounded-[var(--radius-xl)] p-5">
-        <label className="block">
-          <span className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-subtle)]">
-            Documento o radicado
-          </span>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="h-11 flex-1 rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] px-3 text-sm text-[var(--text)]"
-              placeholder="CC o número de trámite"
-            />
-            <button
-              type="submit"
-              className="rounded-full bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]"
-            >
-              Consultar
-            </button>
-          </div>
-        </label>
-      </form>
+      <div className="card mb-3">
+        <div className="card-body">
+          <form onSubmit={onSearch}>
+            <label className="form-label">Documento o número de trámite</label>
+            <div className="input-group">
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="form-control"
+                placeholder="CC o número de radicado"
+              />
+              <button type="submit" className="btn btn-primary">
+                Consultar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
 
       {loaded && (
-        <div className="mt-6">
-          <div className="mb-4 rounded-[var(--radius-xl)] border border-[var(--border)] bg-[var(--bg-muted)] p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-subtle)]">
-              Titular
-            </p>
-            <p className="mt-1 font-semibold text-[var(--text)]">{mockExpediente.ciudadano}</p>
-            <p className="text-sm text-[var(--text-muted)]">{mockExpediente.documento}</p>
+        <>
+          <div className="card mb-3">
+            <div className="card-body">
+              <small className="text-body-secondary text-uppercase">Titular</small>
+              <h2 className="h5 mb-0">{mockExpediente.ciudadano}</h2>
+              <p className="text-body-secondary mb-0">{mockExpediente.documento}</p>
+            </div>
           </div>
 
-          <ol className="relative space-y-4 border-l border-[var(--border)] pl-6">
-            {eventos.map((ev) => (
-              <li key={ev.id} className="relative">
-                <span className="absolute top-1.5 -left-[1.85rem] h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />
-                <div className="glass-panel rounded-[var(--radius-xl)] p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div>
-                      <p className="text-xs text-[var(--text-subtle)]">{ev.fecha}</p>
-                      <h2 className="mt-1 font-semibold text-[var(--text)]">{ev.titulo}</h2>
-                      <p className="mt-1 text-sm text-[var(--text-muted)]">{ev.detalle}</p>
-                      <p className="mt-2 text-xs font-semibold uppercase tracking-[0.1em] text-[var(--text-subtle)]">
-                        {ev.origen}
-                      </p>
-                    </div>
-                    <StatusBadge tone={ev.estadoTone}>{ev.estado}</StatusBadge>
-                  </div>
+          <div className="card">
+            <div className="card-header">
+              <h3 className="card-title">Línea de tiempo</h3>
+            </div>
+            <div className="card-body">
+              {/* Timeline nativo de AdminLTE v4 (UI/timeline). */}
+              <div className="timeline">
+                {eventos.map((ev, idx) => {
+                  const [fecha, hora] = ev.fecha.split(' ')
+                  const prevFecha = eventos[idx - 1]?.fecha.split(' ')[0]
+                  const showLabel = fecha !== prevFecha
+                  const icon = origenIcon[ev.origen] ?? 'bi-record-circle'
+
+                  return (
+                    <Fragment key={ev.id}>
+                      {showLabel && (
+                        <div className="time-label">
+                          <span className="text-bg-primary">{fecha}</span>
+                        </div>
+                      )}
+                      <div>
+                        <i
+                          className={`timeline-icon text-white bi ${icon} ${toneBg[ev.estadoTone]}`}
+                          aria-hidden
+                        />
+                        <div className="timeline-item">
+                          {hora && (
+                            <span className="time">
+                              <i className="bi bi-clock me-1" />
+                              {hora}
+                            </span>
+                          )}
+                          <h3 className="timeline-header">{ev.titulo}</h3>
+                          <div className="timeline-body">{ev.detalle}</div>
+                          <div className="timeline-footer">
+                            <span className="badge text-bg-light border me-1">{ev.origen}</span>
+                            <StatusBadge tone={ev.estadoTone}>{ev.estado}</StatusBadge>
+                          </div>
+                        </div>
+                      </div>
+                    </Fragment>
+                  )
+                })}
+
+                {/* Cierre de la línea de tiempo */}
+                <div>
+                  <i className="timeline-icon text-white bi bi-check2-all bg-secondary" aria-hidden />
                 </div>
-              </li>
-            ))}
-          </ol>
-        </div>
+              </div>
+            </div>
+          </div>
+        </>
       )}
-    </div>
+    </>
   )
 }

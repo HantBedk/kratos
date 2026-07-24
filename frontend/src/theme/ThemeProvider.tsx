@@ -29,7 +29,8 @@ function getInitialTheme(): Theme {
 }
 
 function applyTheme(theme: Theme) {
-  document.documentElement.classList.toggle('dark', theme === 'dark')
+  document.documentElement.setAttribute('data-bs-theme', theme)
+  document.documentElement.style.colorScheme = theme
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {

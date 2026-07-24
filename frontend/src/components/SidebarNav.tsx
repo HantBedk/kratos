@@ -1,10 +1,11 @@
-import { ChevronDown } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { findModuleGroup, moduleGroups } from '@/data/modules'
+import { useSession } from '@/auth/SessionContext'
+import { filterGroupsForRole } from '@/data/demoRoles'
+import { findModuleGroup } from '@/data/modules'
 
-function closedGroups(): Record<string, boolean> {
-  return Object.fromEntries(moduleGroups.map((group) => [group.id, false]))
+function closedGroups(groupIds: string[]): Record<string, boolean> {
+  return Object.fromEntries(groupIds.map((id) => [id, false]))
 }
 
 function activeGroupIdFromPath(pathname: string): string | null {
@@ -13,88 +14,94 @@ function activeGroupIdFromPath(pathname: string): string | null {
   return findModuleGroup(match[1])?.id ?? null
 }
 
-export function SidebarNav({ collapsed = false }: { collapsed?: boolean }) {
+export function SidebarNav() {
   const location = useLocation()
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(closedGroups)
+  const { role } = useSession()
+  const groups = useMemo(() => filterGroupsForRole(role ?? undefined), [role])
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
+    closedGroups(groups.map((g) => g.id)),
+  )
 
   useEffect(() => {
+    const ids = groups.map((g) => g.id)
     const activeGroupId = activeGroupIdFromPath(location.pathname)
     setOpenGroups(() => {
-      const next = closedGroups()
-      if (activeGroupId) next[activeGroupId] = true
+      const next = closedGroups(ids)
+      if (activeGroupId && ids.includes(activeGroupId)) next[activeGroupId] = true
       return next
     })
-  }, [location.pathname])
+  }, [location.pathname, groups])
 
   const toggleGroup = (id: string) => {
     setOpenGroups((prev) => ({ ...prev, [id]: !prev[id] }))
   }
 
   return (
-    <nav className="flex flex-col gap-1 px-3 pb-6" aria-label="Módulos del ERP">
-      <NavLink
-        to="/app/dashboard"
-        className={({ isActive }) =>
-          [
-            'mb-2 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors',
-            isActive
-              ? 'bg-[var(--bg-sidebar-active)] text-[var(--text-on-dark)]'
-              : 'text-[var(--text-on-dark-muted)] hover:bg-[var(--bg-sidebar-hover)] hover:text-[var(--text-on-dark)]',
-          ].join(' ')
-        }
-      >
-        <span className="grid h-8 w-8 place-items-center rounded-lg bg-white/10">◆</span>
-        {!collapsed && <span>Dashboard</span>}
-      </NavLink>
+    // Treeview controlado por React (estado openGroups). NO usamos
+    // `data-lte-toggle="treeview"` para evitar el doble toggle con el
+    // listener global de AdminLTE, que provocaba el parpadeo abrir/cerrar.
+    <ul className="nav sidebar-menu flex-column" role="menu">
+      <li className="nav-item">
+        <NavLink
+          to="/app/dashboard"
+          className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+          end
+        >
+          <i className="nav-icon bi bi-speedometer2" aria-hidden />
+          <p>Dashboard</p>
+        </NavLink>
+      </li>
 
-      {moduleGroups.map((group) => {
-        const Icon = group.icon
+      {groups.map((group) => {
         const open = openGroups[group.id]
+        const hasActiveChild = group.items.some((item) =>
+          location.pathname.includes(`/modulos/${item.slug}`),
+        )
+        const icon = group.iconClass ?? 'bi-folder'
 
         return (
-          <div key={group.id} className="mb-1">
-            <button
-              type="button"
-              onClick={() => toggleGroup(group.id)}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-[var(--text-on-dark-muted)] transition-colors hover:bg-[var(--bg-sidebar-hover)] hover:text-[var(--text-on-dark)]"
+          <li
+            key={group.id}
+            className={`nav-item${open || hasActiveChild ? ' menu-open' : ''}`}
+          >
+            <a
+              href="#"
+              className={`nav-link${hasActiveChild ? ' active' : ''}`}
+              onClick={(e) => {
+                e.preventDefault()
+                toggleGroup(group.id)
+              }}
+              aria-expanded={open}
             >
-              <span className="grid h-8 w-8 place-items-center rounded-lg bg-white/8 text-[var(--ink-200)]">
-                <Icon className="h-4 w-4" strokeWidth={2} />
-              </span>
-              {!collapsed && (
-                <>
-                  <span className="flex-1 truncate">{group.label}</span>
-                  <ChevronDown
-                    className={`h-4 w-4 shrink-0 transition-transform duration-200 ${open ? 'rotate-0' : '-rotate-90'}`}
-                  />
-                </>
-              )}
-            </button>
-
-            {!collapsed && open && (
-              <ul className="mt-1 space-y-0.5 border-l border-white/10 ml-7 pl-3">
-                {group.items.map((item) => (
-                  <li key={item.slug}>
-                    <NavLink
-                      to={`/app/modulos/${item.slug}`}
-                      className={({ isActive }) =>
-                        [
-                          'block rounded-lg px-2.5 py-2 text-[13px] transition-colors',
-                          isActive
-                            ? 'bg-[var(--bg-sidebar-active)] font-semibold text-[var(--text-on-dark)]'
-                            : 'text-[var(--text-on-dark-muted)] hover:bg-[var(--bg-sidebar-hover)] hover:text-[var(--text-on-dark)]',
-                        ].join(' ')
-                      }
-                    >
-                      {item.label}
-                    </NavLink>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+              <i className={`nav-icon bi ${icon}`} aria-hidden />
+              <p>
+                {group.label}
+                <i className="nav-arrow bi bi-chevron-right" aria-hidden />
+              </p>
+            </a>
+            <ul className="nav nav-treeview" style={{ display: open ? 'block' : 'none' }}>
+              {group.items.map((item) => (
+                <li key={item.slug} className="nav-item">
+                  <NavLink
+                    to={`/app/modulos/${item.slug}`}
+                    className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+                  >
+                    {/* El Dashboard del módulo lleva icono propio; el resto de
+                        sub-ítems usa el bullet estándar del treeview AdminLTE. */}
+                    <i
+                      className={`nav-icon bi ${
+                        item.kind === 'dashboard' ? 'bi-speedometer2' : 'bi-circle'
+                      }`}
+                      aria-hidden
+                    />
+                    <p>{item.label}</p>
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </li>
         )
       })}
-    </nav>
+    </ul>
   )
 }

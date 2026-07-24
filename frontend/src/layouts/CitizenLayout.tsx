@@ -1,62 +1,99 @@
 import { Link, NavLink, Outlet } from 'react-router-dom'
-import { BrandMark } from '@/components/BrandMark'
+import { useAdminLteCitizen } from '@/adminlte/useAdminLteCitizen'
+import { useSession } from '@/auth/SessionContext'
+import { CitizenUserMenu } from '@/components/shell/TopbarControls'
 import { citizenServices } from '@/data/citizenPortal'
-import { ThemeToggle } from '@/theme/ThemeToggle'
+import { currentEntity } from '@/data/entity'
 
 export function CitizenLayout() {
+  useAdminLteCitizen()
+  const { role, signedIn } = useSession()
+  const staffSession = signedIn && role?.consoleAccess
+
   return (
-    <div className="app-atmosphere min-h-screen">
-      <div className="pointer-events-none absolute inset-0 grid-overlay opacity-50" />
-      <div className="relative mx-auto max-w-5xl px-4 py-6 md:px-8">
-        <header className="flex flex-wrap items-center justify-between gap-4">
-          <BrandMark to="/ciudadano" />
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <Link
-              to="/login"
-              className="hidden rounded-full border border-[var(--border)] bg-[var(--surface-solid)] px-4 py-2 text-sm font-semibold text-[var(--text)] sm:inline-flex"
-            >
-              Consola funcionarios
-            </Link>
+    <div className="app-wrapper">
+      <nav className="app-header navbar navbar-expand bg-body">
+        <div className="container-fluid">
+          <ul className="navbar-nav">
+            <li className="nav-item">
+              <a
+                className="nav-link"
+                data-lte-toggle="sidebar"
+                href="#"
+                role="button"
+                aria-label="Alternar menú"
+                onClick={(e) => e.preventDefault()}
+              >
+                <i className="bi bi-list" />
+              </a>
+            </li>
+            <li className="nav-item d-none d-md-block">
+              <span className="nav-link disabled">Portal ciudadano</span>
+            </li>
+          </ul>
+          <ul className="navbar-nav ms-auto">
+            {staffSession && (
+              <li className="nav-item">
+                <Link to="/app/dashboard" className="nav-link">
+                  Consola funcionarios
+                </Link>
+              </li>
+            )}
+            <CitizenUserMenu />
+          </ul>
+        </div>
+      </nav>
+
+      <aside className="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
+        <div className="sidebar-brand">
+          <Link to="/ciudadano" className="brand-link">
+            <span className="brand-image opacity-75 me-2">
+              <i className="bi bi-building" />
+            </span>
+            <span className="brand-text fw-light">{currentEntity.name}</span>
+          </Link>
+        </div>
+        <div className="sidebar-wrapper">
+          <nav className="mt-2" aria-label="Servicios ciudadanos">
+            <ul className="nav sidebar-menu flex-column" role="menu">
+              <li className="nav-item">
+                <NavLink
+                  to="/ciudadano"
+                  end
+                  className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+                >
+                  <i className="nav-icon bi bi-speedometer2" />
+                  <p>Inicio</p>
+                </NavLink>
+              </li>
+              {citizenServices.map((service) => (
+                <li key={service.slug} className="nav-item">
+                  <NavLink
+                    to={service.to}
+                    className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+                  >
+                    <i className={`nav-icon ${service.iconClass}`} />
+                    <p>{service.title}</p>
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
+      </aside>
+
+      <main className="app-main">
+        <div className="app-content">
+          <div className="container-fluid">
+            <Outlet />
           </div>
-        </header>
+        </div>
+      </main>
 
-        <nav
-          className="mt-6 flex gap-2 overflow-x-auto pb-1"
-          aria-label="Servicios del portal"
-        >
-          <NavLink
-            to="/ciudadano"
-            end
-            className={({ isActive }) =>
-              `shrink-0 rounded-full px-3.5 py-2 text-sm font-semibold transition ${
-                isActive
-                  ? 'bg-[var(--accent)] text-white'
-                  : 'border border-[var(--border)] bg-[var(--surface-solid)] text-[var(--text-muted)] hover:text-[var(--text)]'
-              }`
-            }
-          >
-            Inicio
-          </NavLink>
-          {citizenServices.map((service) => (
-            <NavLink
-              key={service.slug}
-              to={service.to}
-              className={({ isActive }) =>
-                `shrink-0 rounded-full px-3.5 py-2 text-sm font-semibold transition ${
-                  isActive
-                    ? 'bg-[var(--accent)] text-white'
-                    : 'border border-[var(--border)] bg-[var(--surface-solid)] text-[var(--text-muted)] hover:text-[var(--text)]'
-                }`
-              }
-            >
-              {service.title}
-            </NavLink>
-          ))}
-        </nav>
-
-        <Outlet />
-      </div>
+      <footer className="app-footer">
+        <div className="float-end d-none d-sm-inline">Demo · SelvaTic</div>
+        <strong>{currentEntity.name}</strong> — Portal ciudadano (AdminLTE 4)
+      </footer>
     </div>
   )
 }
