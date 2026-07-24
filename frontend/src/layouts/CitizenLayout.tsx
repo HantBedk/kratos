@@ -16,16 +16,14 @@ export function CitizenLayout() {
         <div className="container-fluid">
           <ul className="navbar-nav">
             <li className="nav-item">
-              <a
+              <button
+                type="button"
                 className="nav-link"
                 data-lte-toggle="sidebar"
-                href="#"
-                role="button"
                 aria-label="Alternar menú"
-                onClick={(e) => e.preventDefault()}
               >
                 <i className="bi bi-list" />
-              </a>
+              </button>
             </li>
             <li className="nav-item d-none d-md-block">
               <span className="nav-link disabled">Portal ciudadano</span>
@@ -55,7 +53,7 @@ export function CitizenLayout() {
         </div>
         <div className="sidebar-wrapper">
           <nav className="mt-2" aria-label="Servicios ciudadanos">
-            <ul className="nav sidebar-menu flex-column" role="menu">
+            <ul className="nav sidebar-menu flex-column">
               <li className="nav-item">
                 <NavLink
                   to="/ciudadano"

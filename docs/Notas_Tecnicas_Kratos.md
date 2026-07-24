@@ -29,7 +29,7 @@
 
 ## 3. Estado actual de la SPA
 
-- URL: **http://localhost:5173**
+- URL: **http://localhost:5174**
 - `/login` → `login-page` / `login-box`
 - `/app/*` → `layout-fixed` + `app-wrapper` (consola)
 - `/ciudadano/*` → mismo layout AdminLTE (portal)
@@ -38,7 +38,7 @@
 
 ## Puerto fijo
 
-**5173** — regla del proyecto; ver `.cursor/rules/puerto-fijo.mdc`. No cambiar.
+**5174** — regla del proyecto; ver `.cursor/rules/puerto-fijo.mdc`. No cambiar.
 
 ---
 

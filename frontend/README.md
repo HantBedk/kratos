@@ -6,7 +6,7 @@ ERP Municipal SelvaTic · Proyecto Kratos
 
 ## Puerto fijo (obligatorio)
 
-**http://localhost:5173** — no cambiar nunca.
+**http://localhost:5174** — no cambiar nunca.
 
 ## Stack
 
@@ -23,7 +23,7 @@ npm install
 npm run dev
 ```
 
-Abre **http://localhost:5173**. CSS de UI en `src/adminlte/bootstrap.ts`.
+Abre **http://localhost:5174**. CSS de UI en `src/adminlte/bootstrap.ts`.
 
 ## Docker
 
@@ -31,7 +31,7 @@ Abre **http://localhost:5173**. CSS de UI en `src/adminlte/bootstrap.ts`.
 docker compose up --build -d
 ```
 
-URL: **http://localhost:5173**
+URL: **http://localhost:5174**
 
 ## Rutas
 

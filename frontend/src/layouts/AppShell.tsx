@@ -21,7 +21,7 @@ function breadcrumbFromPath(pathname: string) {
     const mod = findModule(slug ?? '')
     return {
       section: 'Módulos',
-      page: mod?.label ?? slug?.replace(/-/g, ' ') ?? 'Módulo',
+      page: mod?.label ?? slug?.replaceAll('-', ' ') ?? 'Módulo',
     }
   }
   return { section: 'Consola', page: 'Inicio' }
@@ -40,16 +40,14 @@ export function AppShell() {
         <div className="container-fluid">
           <ul className="navbar-nav">
             <li className="nav-item">
-              <a
+              <button
+                type="button"
                 className="nav-link"
                 data-lte-toggle="sidebar"
-                href="#"
-                role="button"
                 aria-label="Alternar menú lateral"
-                onClick={(e) => e.preventDefault()}
               >
                 <i className="bi bi-list" />
-              </a>
+              </button>
             </li>
             <li className="nav-item d-none d-md-block">
               <span className="nav-link disabled">Consola · {role?.label ?? 'Demo'}</span>
@@ -132,7 +130,7 @@ export function AppShell() {
       </main>
 
       <footer className="app-footer">
-        <div className="float-end d-none d-sm-inline">http://localhost:5173</div>
+        <div className="float-end d-none d-sm-inline">http://localhost:5174</div>
         <strong>Kratos · SelvaTic</strong> — AdminLTE 4
       </footer>
 

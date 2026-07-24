@@ -1,5 +1,5 @@
 # Proyecto Kratos — ERP Municipal SelvaTic
-# PUERTO FIJO: 5173 — no cambiar nunca (ver .cursor/rules/puerto-fijo.mdc)
+# PUERTO FIJO: 5174 — no cambiar nunca (ver .cursor/rules/puerto-fijo.mdc)
 
 name: kratos
 
@@ -10,5 +10,5 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "5173:80"
+      - "5174:80"
     restart: unless-stopped

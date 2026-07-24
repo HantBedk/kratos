@@ -1,19 +1,19 @@
 ---
-description: Puerto fijo del proyecto Kratos — nunca cambiar 5173
+description: Puerto fijo del proyecto Kratos — nunca cambiar 5174
 alwaysApply: true
 ---
 
-# Puerto fijo: 5173
+# Puerto fijo: 5174
 
 **Regla principal e innegociable del proyecto Kratos (SelvaTic).**
 
-- El puerto oficial de la aplicación es **`5173`**.
-- URL canónica: **http://localhost:5173**
+- El puerto oficial de la aplicación es **`5174`**.
+- URL canónica: **http://localhost:5174**
 - Aplica a:
   - Vite (`npm run dev`)
-  - Docker Compose (mapeo host `5173:80`)
+  - Docker Compose (mapeo host `5174:80`)
   - Documentación, README y ejemplos
-- **NUNCA** cambiar este puerto a otro (ni 5280, ni 3000, ni “el que esté libre”).
+- **NUNCA** cambiar este puerto a otro (ni 5173, ni 3000, ni “el que esté libre”).
 - **NUNCA** proponer o aplicar un puerto distinto “para evitar conflictos” con otros proyectos.
 - Si el puerto está ocupado: liberar el proceso que lo usa o avisar al usuario; **no** migrar Kratos a otro puerto.
-- Si se edita `docker-compose.yml`, `vite.config.ts` o docs de arranque, el puerto debe seguir siendo **5173**.
+- Si se edita `docker-compose.yml`, `vite.config.ts` o docs de arranque, el puerto debe seguir siendo **5174**.

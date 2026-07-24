@@ -11,11 +11,11 @@ export default defineConfig({
   },
   // PUERTO FIJO DEL PROYECTO — no cambiar (regla .cursor/rules/puerto-fijo.mdc)
   server: {
-    port: 5173,
+    port: 5174,
     strictPort: true,
   },
   preview: {
-    port: 5173,
+    port: 5174,
     strictPort: true,
   },
 })

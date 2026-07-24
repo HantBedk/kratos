@@ -1,7 +1,7 @@
 # Backlog vivo — Núcleo demo Kratos
 
 **Producto:** Kratos (ERP Municipal SelvaTic)  
-**URL demo:** http://localhost:5173  
+**URL demo:** http://localhost:5174  
 **Versión:** 0.2  
 **Última actualización:** 23 de julio de 2026  
 
