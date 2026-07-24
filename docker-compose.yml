@@ -1,6 +1,8 @@
 # Proyecto Kratos — ERP Municipal SelvaTic
 # PUERTO FIJO: 5173 — no cambiar nunca (ver .cursor/rules/puerto-fijo.mdc)
 
+name: kratos
+
 services:
   kratos-frontend:
     container_name: kratos-frontend
