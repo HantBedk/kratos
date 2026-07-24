@@ -13,6 +13,19 @@ import { formatCOP } from '@/lib/money'
 import { ModuleDashboardPage } from '@/pages/ModuleDashboardPage'
 import { PqrsdManagePage } from '@/pages/PqrsdManagePage'
 
+/** Estados de excepción: no forman parte del avance lineal del flujo. */
+const FLOW_EXCEPTION_STATUSES = new Set([
+  'Anulada',
+  'Anulado',
+  'Rechazada',
+  'Rechazado',
+  'Reversado',
+  'Devuelta',
+  'Devuelto',
+  'Cancelada',
+  'Cancelado',
+])
+
 export function ModuleWorkspacePage() {
   const { slug = '' } = useParams()
   const { role } = useSession()
@@ -196,16 +209,24 @@ function ModuleListWorkspace({ slug }: { slug: string }) {
     showToast(`${workspace.singular} creado correctamente (demo)`)
   }
 
+  const flowOptions = workspace.filters.filter(
+    (f) => f !== 'Todos' && !FLOW_EXCEPTION_STATUSES.has(f),
+  )
+  const selectedFlowIdx = selected ? flowOptions.indexOf(selected.status) : -1
+  const canAdvance =
+    !!selected && selectedFlowIdx >= 0 && selectedFlowIdx < flowOptions.length - 1
+
   const advanceStatus = () => {
-    if (!selected) return
-    const idx = workspace.filters.filter((f) => f !== 'Todos').indexOf(selected.status)
-    const options = workspace.filters.filter((f) => f !== 'Todos')
-    const next = options[Math.min(idx + 1, options.length - 1)] ?? selected.status
-    const tones = ['neutral', 'info', 'warning', 'success', 'accent', 'danger'] as const
+    if (!selected || !canAdvance) {
+      showToast('El registro ya está en el estado final del flujo')
+      return
+    }
+    const next = flowOptions[selectedFlowIdx + 1]
+    const tones = ['neutral', 'info', 'warning', 'success', 'accent'] as const
     const updated = {
       ...selected,
       status: next,
-      statusTone: tones[Math.min(idx + 1, tones.length - 1)],
+      statusTone: tones[Math.min(selectedFlowIdx + 1, tones.length - 1)],
       notes: `${selected.notes} · Avance de flujo: ${next}`,
     }
     setRecords((prev) => prev.map((row) => (row.id === selected.id ? { ...updated, fields: row.fields } : row)))
@@ -332,7 +353,13 @@ function ModuleListWorkspace({ slug }: { slug: string }) {
               <button type="button" className="btn btn-outline-secondary" onClick={() => setSelected(null)}>
                 Cerrar
               </button>
-              <button type="button" className="btn btn-primary" onClick={advanceStatus}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={advanceStatus}
+                disabled={!canAdvance}
+                title={canAdvance ? undefined : 'Sin más avances en este flujo'}
+              >
                 Avanzar estado
               </button>
             </>
